@@ -31,6 +31,8 @@ void HelloTriangleApplication::mainLoop() {
     }
 }
 void HelloTriangleApplication::cleanUp() {
+    m_Instance.destroy();
+
     glfwDestroyWindow(m_pWIndow);
 
     glfwTerminate();
@@ -60,4 +62,9 @@ void HelloTriangleApplication::vk_createInstance() {
     m_Instance = vk::createInstance(createInfo);
     if (!m_Instance)
         throw std::runtime_error("failed to create instance!");
+
+    std::vector<vk::ExtensionProperties> extensions = vk::enumerateInstanceExtensionProperties();
+    std::cout << "available extensions:\n";
+    for (const auto &extension : extensions)
+        std::cout << "    " << extension.extensionName << "\n";
 }
