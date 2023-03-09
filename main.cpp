@@ -1,7 +1,16 @@
-#include <iostream>
+#include "render/render.h"
+#include <cstdlib>
+#include <exception>
 
-int main(int argc, char* argv[])
-{
-    std::cout << "Hello, Vulkan!" << std::endl;
-    return 0;
+int main(int argc, char *argv[]) {
+    HelloTriangleApplication app;
+
+    try {
+        app.run();
+    } catch (const std::exception &e) {
+        std::cerr << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    return EXIT_SUCCESS;
 }
