@@ -3,11 +3,13 @@
 #include <cstdint>
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_core.h>
+#include <vulkan/vulkan_handles.hpp>
 #include <vulkan/vulkan_structs.hpp>
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include <optional>
 #include <iostream>
 #include <stdexcept>
 
@@ -27,9 +29,16 @@ private:
     const bool m_EnableValidationLayers = true;
 #endif
 
+    // struct
+    struct QueueFamilyIndices{ 
+        std::optional<uint32_t> graphicsFamily; 
+        bool isComplete() { return graphicsFamily.has_value(); }    
+    };
+
     vk::DebugUtilsMessengerEXT m_DebugMessenger;
 
     vk::Instance m_Instance;
+    vk::PhysicalDevice m_PhysicalDevice;
 
 public:
     void run();
@@ -48,8 +57,14 @@ private:
         VkDebugUtilsMessageTypeFlagsEXT messageTypes,
         const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
         void *pUserData);
-    void setupDebugMessenger();
     void populateDebugMessengerCreateInfo(vk::DebugUtilsMessengerCreateInfoEXT &createInfo);
 
+    bool isDeviceSuitable(vk::PhysicalDevice device);
+    int rateDeviceSuitability(vk::PhysicalDevice device);
+
+    QueueFamilyIndices findQueueFamilies(vk::PhysicalDevice device);
+
     void createInstance();
+    void pickPhysicalDevice();
+    void setupDebugMessenger();
 };
