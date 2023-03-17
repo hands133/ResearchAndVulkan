@@ -39,6 +39,9 @@ private:
 
     vk::Instance m_Instance;
     vk::PhysicalDevice m_PhysicalDevice;
+    vk::Device m_Device;
+
+    vk::Queue m_GraphicsQueue;
 
 public:
     void run();
@@ -65,6 +68,7 @@ private:
     QueueFamilyIndices findQueueFamilies(vk::PhysicalDevice device);
 
     void createInstance();
-    void pickPhysicalDevice();
     void setupDebugMessenger();
+    void pickPhysicalDevice();
+    void createLogicalDevice();
 };
