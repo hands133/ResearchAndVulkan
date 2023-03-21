@@ -1,6 +1,6 @@
 # Vulkan Tutorial (C++ Ver.)
 
-## Vulkan `vk::PhysicalDevice` 和
+## Vulkan `vk::Device` 和 `vk::Queue`
 
 ### 介绍
 

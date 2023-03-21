@@ -16,7 +16,7 @@
 class HelloTriangleApplication {
 private:
     // GLFW members
-    GLFWwindow *m_pWIndow{ nullptr };
+    GLFWwindow *m_pWindow{ nullptr };
     const uint32_t m_Width = 600;
     const uint32_t m_Height = 400;
     // vulkan members
@@ -32,7 +32,9 @@ private:
     // struct
     struct QueueFamilyIndices{ 
         std::optional<uint32_t> graphicsFamily; 
-        bool isComplete() { return graphicsFamily.has_value(); }    
+        std::optional<uint32_t> presentFamily;
+
+        bool isComplete() { return graphicsFamily.has_value() && presentFamily.has_value(); }    
     };
 
     vk::DebugUtilsMessengerEXT m_DebugMessenger;
@@ -42,6 +44,9 @@ private:
     vk::Device m_Device;
 
     vk::Queue m_GraphicsQueue;
+    vk::Queue m_PresentQueue;
+
+    vk::SurfaceKHR m_Surface;
 
 public:
     void run();
@@ -69,6 +74,7 @@ private:
 
     void createInstance();
     void setupDebugMessenger();
+    void createSurface();
     void pickPhysicalDevice();
     void createLogicalDevice();
 };

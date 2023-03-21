@@ -1,8 +1,10 @@
 #include "render/render.h"
 #include "GLFW/glfw3.h"
+#include <cstdint>
 #include <cstring>
 #include <stdexcept>
 #include <map>
+#include <set>
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_core.h>
 #include <vulkan/vulkan_enums.hpp>
@@ -22,18 +24,19 @@ void HelloTriangleApplication::initWindow() {
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
-    m_pWIndow = glfwCreateWindow(m_Width, m_Height, "Vulkan", nullptr, nullptr);
+    m_pWindow = glfwCreateWindow(m_Width, m_Height, "Vulkan", nullptr, nullptr);
 }
 
 void HelloTriangleApplication::initVulkan() {
     createInstance();
     setupDebugMessenger();
+    createSurface();
     pickPhysicalDevice();
     createLogicalDevice();
 }
 
 void HelloTriangleApplication::mainLoop() {
-    while (!glfwWindowShouldClose(m_pWIndow)) {
+    while (!glfwWindowShouldClose(m_pWindow)) {
         glfwPollEvents();
     }
 }
@@ -44,10 +47,10 @@ void HelloTriangleApplication::cleanUp() {
     if (m_EnableValidationLayers)
         m_Instance.destroyDebugUtilsMessengerEXT(m_DebugMessenger, nullptr, vk::DispatchLoaderDynamic(m_Instance, vkGetInstanceProcAddr));
 
+    m_Instance.destroySurfaceKHR(m_Surface);
     m_Instance.destroy();
 
-    glfwDestroyWindow(m_pWIndow);
-
+    glfwDestroyWindow(m_pWindow);
     glfwTerminate();
 }
 
@@ -102,6 +105,15 @@ void HelloTriangleApplication::setupDebugMessenger() {
     m_DebugMessenger = m_Instance.createDebugUtilsMessengerEXT(createInfo, nullptr, vk::DispatchLoaderDynamic(m_Instance, vkGetInstanceProcAddr));
 }
 
+void HelloTriangleApplication::createSurface()
+{
+    VkSurfaceKHR tmpSurface;
+    VkResult result = glfwCreateWindowSurface(m_Instance, m_pWindow, nullptr, &tmpSurface);
+    if (result != VK_SUCCESS)
+        throw std::runtime_error("failed to create window surface!");
+    m_Surface = tmpSurface;
+}
+
 void HelloTriangleApplication::populateDebugMessengerCreateInfo(vk::DebugUtilsMessengerCreateInfoEXT &createInfo) {
     createInfo = vk::DebugUtilsMessengerCreateInfoEXT();
     createInfo.setMessageSeverity(
@@ -136,16 +148,25 @@ void HelloTriangleApplication::createLogicalDevice()
 {
     QueueFamilyIndices indices = findQueueFamilies(m_PhysicalDevice);
 
+    std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
+    std::set<uint32_t> uniqueQueueFamilies = {
+        indices.graphicsFamily.value(),
+        indices.presentFamily.value()
+    };
+
     float queuePriority = 1.0f;
-    vk::DeviceQueueCreateInfo queueCreateInfo{};
-    queueCreateInfo.setQueueFamilyIndex(indices.graphicsFamily.value())
-    .setQueueCount(1)
-    .setQueuePriorities(queuePriority);
+    for (uint32_t queueFamily : uniqueQueueFamilies) {
+        vk::DeviceQueueCreateInfo queueCreateInfo{};
+        queueCreateInfo.setQueueFamilyIndex(queueFamily)
+        .setQueueCount(1)
+        .setQueuePriorities(queuePriority);
+        queueCreateInfos.push_back(queueCreateInfo);
+    }
 
     vk::PhysicalDeviceFeatures deviceFeatures{};
 
     vk::DeviceCreateInfo createInfo{};
-    createInfo.setQueueCreateInfos(queueCreateInfo)
+    createInfo.setQueueCreateInfos(queueCreateInfos)
     .setPEnabledFeatures(&deviceFeatures)
     .setEnabledExtensionCount(0);
 
@@ -157,6 +178,7 @@ void HelloTriangleApplication::createLogicalDevice()
         throw std::runtime_error("failed to create logical device!");
 
     m_GraphicsQueue = m_Device.getQueue(indices.graphicsFamily.value(), 0);
+    m_PresentQueue = m_Device.getQueue(indices.presentFamily.value(), 0);
 }
 
 bool HelloTriangleApplication::isDeviceSuitable(vk::PhysicalDevice device) {
@@ -192,6 +214,9 @@ HelloTriangleApplication::findQueueFamilies(vk::PhysicalDevice device)
     {
         if (queueFamily.queueFlags & vk::QueueFlagBits::eGraphics)
             indices.graphicsFamily = i;
+
+        auto presentSupport = device.getSurfaceSupportKHR(i, m_Surface);
+        if (presentSupport) indices.presentFamily = i;
         
         if (indices.isComplete())   break;
         ++i;
