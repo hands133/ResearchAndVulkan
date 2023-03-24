@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_core.h>
+#include <vulkan/vulkan_enums.hpp>
 #include <vulkan/vulkan_handles.hpp>
 #include <vulkan/vulkan_structs.hpp>
 
@@ -20,8 +21,11 @@ private:
     const uint32_t m_Width = 600;
     const uint32_t m_Height = 400;
     // vulkan members
-    const std::vector<const char *> m_VecValidationLayers = {
+    const std::vector<const char *> m_vecValidationLayers = {
         "VK_LAYER_KHRONOS_validation"
+    };
+    const std::vector<const char*> m_vecDeviceExtensions = {
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME
     };
 #ifdef NDEBUG
     const bool m_EnableValidationLayers = false;
@@ -37,6 +41,12 @@ private:
         bool isComplete() { return graphicsFamily.has_value() && presentFamily.has_value(); }    
     };
 
+    struct SwapChainSupportDetails {
+        vk::SurfaceCapabilitiesKHR capabilities;
+        std::vector<vk::SurfaceFormatKHR> formats;
+        std::vector<vk::PresentModeKHR> presentModes;
+    };
+
     vk::DebugUtilsMessengerEXT m_DebugMessenger;
 
     vk::Instance m_Instance;
@@ -48,6 +58,11 @@ private:
 
     vk::SurfaceKHR m_Surface;
 
+    vk::SwapchainKHR m_SwapChain;
+    std::vector<vk::Image> m_vecSwapChainImages;
+    vk::Format m_SwapChainImageFormat;
+    vk::Extent2D m_SwapChainExtent;
+    
 public:
     void run();
 
@@ -68,13 +83,20 @@ private:
     void populateDebugMessengerCreateInfo(vk::DebugUtilsMessengerCreateInfoEXT &createInfo);
 
     bool isDeviceSuitable(vk::PhysicalDevice device);
+    bool checkDeviceExtensionSupport(vk::PhysicalDevice device);
     int rateDeviceSuitability(vk::PhysicalDevice device);
 
     QueueFamilyIndices findQueueFamilies(vk::PhysicalDevice device);
+    SwapChainSupportDetails querySwapChainSupport(vk::PhysicalDevice device);
+
+    vk::SurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats);
+    vk::PresentModeKHR chooseSwapPresentMode(const std::vector<vk::PresentModeKHR>& availablePresentModes);
+    vk::Extent2D chooseSwapExtent(const vk::SurfaceCapabilitiesKHR& capabilities);
 
     void createInstance();
     void setupDebugMessenger();
     void createSurface();
     void pickPhysicalDevice();
     void createLogicalDevice();
+    void createSwapChain();
 };
