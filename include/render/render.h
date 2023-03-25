@@ -60,6 +60,7 @@ private:
 
     vk::SwapchainKHR m_SwapChain;
     std::vector<vk::Image> m_vecSwapChainImages;
+    std::vector<vk::ImageView> m_vecSwapChainImageViews;
     vk::Format m_SwapChainImageFormat;
     vk::Extent2D m_SwapChainExtent;
     
@@ -99,4 +100,5 @@ private:
     void pickPhysicalDevice();
     void createLogicalDevice();
     void createSwapChain();
+    void createImageViews();
 };

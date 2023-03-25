@@ -36,6 +36,7 @@ void HelloTriangleApplication::initVulkan() {
     pickPhysicalDevice();
     createLogicalDevice();
     createSwapChain();
+    createImageViews();
 }
 
 void HelloTriangleApplication::mainLoop() {
@@ -45,6 +46,9 @@ void HelloTriangleApplication::mainLoop() {
 }
 
 void HelloTriangleApplication::cleanUp() {
+    for (auto& imageView : m_vecSwapChainImageViews)
+        m_Device.destroyImageView(imageView);
+
     m_Device.destroySwapchainKHR(m_SwapChain);
     m_Device.destroy();
 
@@ -229,6 +233,30 @@ void HelloTriangleApplication::createSwapChain()
     m_vecSwapChainImages = m_Device.getSwapchainImagesKHR(m_SwapChain);
     m_SwapChainImageFormat = surfaceFormat.format;
     m_SwapChainExtent = extent;
+}
+
+void HelloTriangleApplication::createImageViews()
+{
+    for (auto& image : m_vecSwapChainImages)
+    {
+        vk::ImageViewCreateInfo createInfo;
+        createInfo.setImage(image)
+        .setViewType(vk::ImageViewType::e2D)
+        .setFormat(m_SwapChainImageFormat)
+        .setComponents(vk::ComponentMapping(
+            vk::ComponentSwizzle::eIdentity,
+            vk::ComponentSwizzle::eIdentity,
+            vk::ComponentSwizzle::eIdentity,
+            vk::ComponentSwizzle::eIdentity))
+        .setSubresourceRange(vk::ImageSubresourceRange(
+            vk::ImageAspectFlagBits::eColor,
+            0,
+            1,
+            0,
+            1));
+        auto& view = m_vecSwapChainImageViews.emplace_back(m_Device.createImageView(createInfo));
+        if (!view)  throw std::runtime_error("failed to create image views!");
+    }
 }
 
 
