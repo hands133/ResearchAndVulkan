@@ -37,6 +37,7 @@ void HelloTriangleApplication::initVulkan() {
     createLogicalDevice();
     createSwapChain();
     createImageViews();
+    createGraphicsPipeline();
 }
 
 void HelloTriangleApplication::mainLoop() {
@@ -259,6 +260,10 @@ void HelloTriangleApplication::createImageViews()
     }
 }
 
+void HelloTriangleApplication::createGraphicsPipeline()
+{
+
+}
 
 bool HelloTriangleApplication::isDeviceSuitable(vk::PhysicalDevice device) {
     QueueFamilyIndices indices = findQueueFamilies(device);

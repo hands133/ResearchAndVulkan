@@ -10,3 +10,4 @@
 6. 窗口表面：`chapters/WindowSurface.md`
 7. 交换链：`chapters/Swapchain.md`
 8. 图像视图：`chapters/ImageViews.md`
+9. 渲染管线的介绍：`chapters/Introduction.md`
