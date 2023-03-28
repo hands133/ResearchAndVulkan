@@ -262,7 +262,27 @@ void HelloTriangleApplication::createImageViews()
 
 void HelloTriangleApplication::createGraphicsPipeline()
 {
+    auto vertShaderCode = readFile("./src/shaders/vert.spv");
+    auto fragShaderCode = readFile("./src/shaders/frag.spv");
 
+    vk::ShaderModule vertShaderModule = createShaderModule(vertShaderCode);
+    vk::ShaderModule fragShaderModule = createShaderModule(fragShaderCode);
+
+    vk::PipelineShaderStageCreateInfo vertShaderStageInfo{};
+    vertShaderStageInfo.setStage(vk::ShaderStageFlagBits::eVertex)
+        .setModule(vertShaderModule)
+        .setPName("main");
+
+    vk::PipelineShaderStageCreateInfo fragShaderStageInfo{};
+    fragShaderStageInfo.setStage(vk::ShaderStageFlagBits::eVertex)
+        .setModule(fragShaderModule)
+        .setPName("main");
+
+    vk::PipelineShaderStageCreateInfo shaderStagesInfo[] =
+        { vertShaderStageInfo, fragShaderStageInfo };
+
+    m_Device.destroy(fragShaderModule);
+    m_Device.destroy(vertShaderModule);
 }
 
 bool HelloTriangleApplication::isDeviceSuitable(vk::PhysicalDevice device) {
@@ -380,6 +400,18 @@ vk::Extent2D HelloTriangleApplication::chooseSwapExtent(const vk::SurfaceCapabil
         
         return actualExtent;
     }
+}
+
+vk::ShaderModule HelloTriangleApplication::createShaderModule(const std::vector<char>& code)
+{
+    vk::ShaderModuleCreateInfo createInfo;
+    createInfo.setCodeSize(code.size())
+        .setPCode(reinterpret_cast<const uint32_t*>(code.data()));
+
+    vk::ShaderModule shaderModule = m_Device.createShaderModule(createInfo);
+    if (!shaderModule)  throw std::runtime_error("failed to create shader module!");
+
+    return shaderModule;
 }
 
 

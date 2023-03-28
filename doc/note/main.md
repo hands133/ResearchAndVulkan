@@ -11,3 +11,4 @@
 7. 交换链：`chapters/Swapchain.md`
 8. 图像视图：`chapters/ImageViews.md`
 9. 渲染管线的介绍：`chapters/Introduction.md`
+10. 着色器模块：`chapters/ShaderModules.md`

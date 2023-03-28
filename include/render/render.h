@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstdint>
+
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_core.h>
 #include <vulkan/vulkan_enums.hpp>
@@ -12,7 +12,27 @@
 
 #include <optional>
 #include <iostream>
+#include <fstream>
+#include <cstdint>
 #include <stdexcept>
+
+static std::vector<char> readFile(const std::string& filename) {
+    std::ifstream file(filename, std::ios::ate | std::ios::binary);
+
+    if (!file.is_open()) {
+        throw std::runtime_error("failed to open file!");
+        file.close();
+    }
+
+    size_t fileSize = file.tellg();
+    std::vector<char> buffer(fileSize);
+
+    file.seekg(0);
+    file.read(buffer.data(), fileSize);
+
+    file.close();
+    return buffer;
+}
 
 class HelloTriangleApplication {
 private:
@@ -93,6 +113,8 @@ private:
     vk::SurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats);
     vk::PresentModeKHR chooseSwapPresentMode(const std::vector<vk::PresentModeKHR>& availablePresentModes);
     vk::Extent2D chooseSwapExtent(const vk::SurfaceCapabilitiesKHR& capabilities);
+
+    vk::ShaderModule createShaderModule(const std::vector<char>& code);
 
     void createInstance();
     void setupDebugMessenger();
