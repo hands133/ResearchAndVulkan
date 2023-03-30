@@ -47,6 +47,8 @@ void HelloTriangleApplication::mainLoop() {
 }
 
 void HelloTriangleApplication::cleanUp() {
+    m_Device.destroyPipelineLayout(m_PipelineLayout);
+
     for (auto& imageView : m_vecSwapChainImageViews)
         m_Device.destroyImageView(imageView);
 
@@ -280,6 +282,86 @@ void HelloTriangleApplication::createGraphicsPipeline()
 
     vk::PipelineShaderStageCreateInfo shaderStagesInfo[] =
         { vertShaderStageInfo, fragShaderStageInfo };
+
+    vk::PipelineVertexInputStateCreateInfo vertexInputInfo{};
+    vertexInputInfo.setVertexBindingDescriptions({})
+    .setVertexAttributeDescriptions({});
+
+    vk::PipelineInputAssemblyStateCreateInfo inputAssembly;
+    inputAssembly.setTopology(vk::PrimitiveTopology::eTriangleList)
+    .setPrimitiveRestartEnable(false);
+
+    vk::Viewport viewport{};
+    viewport.setX(0.0f)
+    .setY(0.0f)
+    .setWidth(m_SwapChainExtent.width)
+    .setHeight(m_SwapChainExtent.height)
+    .setMinDepth(0.0f)
+    .setMaxDepth(1.0f);
+
+    vk::Rect2D scissor{};
+    scissor.setOffset(vk::Offset2D(0, 0))
+        .setExtent(m_SwapChainExtent);
+
+    vk::PipelineViewportStateCreateInfo viewportState;
+    viewportState.setViewports(viewport)
+    .setScissors(scissor);
+
+    vk::PipelineRasterizationStateCreateInfo rasterizer{};
+    rasterizer.setDepthClampEnable(false)
+        .setRasterizerDiscardEnable(false)
+        .setPolygonMode(vk::PolygonMode::eFill)
+        .setLineWidth(1.0f)
+        .setCullMode(vk::CullModeFlagBits::eBack)
+        .setFrontFace(vk::FrontFace::eClockwise)
+        .setDepthBiasEnable(false)
+        .setDepthBiasConstantFactor(0.0f)   // Optional
+        .setDepthBiasClamp(0.0f)            // Optional
+        .setDepthBiasSlopeFactor(0.0f);     // Optional
+
+    vk::PipelineMultisampleStateCreateInfo multisampling{};
+    multisampling.setSampleShadingEnable(true)
+        .setSampleShadingEnable(true)
+        .setRasterizationSamples(vk::SampleCountFlagBits::e1)
+        .setMinSampleShading(1.0f)  // Optional
+        .setPSampleMask(nullptr)    // Optional
+        .setAlphaToCoverageEnable(false)               // Optional
+        .setAlphaToOneEnable(false);    // Optional
+
+    vk::PipelineColorBlendAttachmentState colorBlendAttachment{};
+    colorBlendAttachment.setColorWriteMask(vk::ColorComponentFlags(
+        vk::ColorComponentFlagBits::eR |
+        vk::ColorComponentFlagBits::eG |
+        vk::ColorComponentFlagBits::eB |
+        vk::ColorComponentFlagBits::eA))
+        .setBlendEnable(false)
+        .setSrcColorBlendFactor(vk::BlendFactor::eOne)  // Optional
+        .setDstColorBlendFactor(vk::BlendFactor::eZero) // Optional
+        .setColorBlendOp(vk::BlendOp::eAdd)  // Optional
+        .setSrcAlphaBlendFactor(vk::BlendFactor::eOne)  // Optional
+        .setDstAlphaBlendFactor(vk::BlendFactor::eZero) // Optional
+        .setAlphaBlendOp(vk::BlendOp::eAdd);    // Optional
+
+    vk::PipelineColorBlendStateCreateInfo colorBlending{};
+    colorBlending.setLogicOpEnable(false)
+    .setLogicOp(vk::LogicOp::eCopy)     // Optional
+    .setAttachments(colorBlendAttachment)
+    .setBlendConstants({ 0.0f, 0.0f, 0.0f, 0.0f }); // Optional
+
+    std::vector<vk::DynamicState> dynamicStates {
+        vk::DynamicState::eViewport,
+        vk::DynamicState::eLineWidth
+    };
+    vk::PipelineDynamicStateCreateInfo dynamicState{};
+    dynamicState.setDynamicStates(dynamicStates);
+
+    vk::PipelineLayoutCreateInfo pipelineLayoutInfo{};
+    pipelineLayoutInfo.setSetLayouts({})    // Optional
+        .setPushConstantRanges({}); // Optional
+
+    m_PipelineLayout = m_Device.createPipelineLayout(pipelineLayoutInfo);
+    if (!m_PipelineLayout)  throw std::runtime_error("failed to create pipeline layout!");
+
 
     m_Device.destroy(fragShaderModule);
     m_Device.destroy(vertShaderModule);

@@ -83,6 +83,7 @@ private:
     std::vector<vk::ImageView> m_vecSwapChainImageViews;
     vk::Format m_SwapChainImageFormat;
     vk::Extent2D m_SwapChainExtent;
+    vk::PipelineLayout m_PipelineLayout;
     
 public:
     void run();
@@ -115,6 +116,7 @@ private:
     vk::Extent2D chooseSwapExtent(const vk::SurfaceCapabilitiesKHR& capabilities);
 
     vk::ShaderModule createShaderModule(const std::vector<char>& code);
+
 
     void createInstance();
     void setupDebugMessenger();
