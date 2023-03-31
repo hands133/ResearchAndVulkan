@@ -37,6 +37,7 @@ void HelloTriangleApplication::initVulkan() {
     createLogicalDevice();
     createSwapChain();
     createImageViews();
+    createRenderPass();
     createGraphicsPipeline();
 }
 
@@ -48,6 +49,7 @@ void HelloTriangleApplication::mainLoop() {
 
 void HelloTriangleApplication::cleanUp() {
     m_Device.destroyPipelineLayout(m_PipelineLayout);
+    m_Device.destroyRenderPass(m_RenderPass);
 
     for (auto& imageView : m_vecSwapChainImageViews)
         m_Device.destroyImageView(imageView);
@@ -261,6 +263,34 @@ void HelloTriangleApplication::createImageViews()
         if (!view)  throw std::runtime_error("failed to create image views!");
     }
 }
+
+void HelloTriangleApplication::createRenderPass()
+{
+    vk::AttachmentDescription colorAttachment{};
+    colorAttachment.setFormat(m_SwapChainImageFormat)
+        .setSamples(vk::SampleCountFlagBits::e1)
+        .setLoadOp(vk::AttachmentLoadOp::eClear)
+        .setStoreOp(vk::AttachmentStoreOp::eStore)
+        .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+        .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
+        .setInitialLayout(vk::ImageLayout::eUndefined)
+        .setFinalLayout(vk::ImageLayout::ePresentSrcKHR);
+
+    vk::AttachmentReference colorAttachmentRef{};
+    colorAttachmentRef.setAttachment(0)
+        .setLayout(vk::ImageLayout::eColorAttachmentOptimal);
+
+    vk::SubpassDescription subpass{};
+    subpass.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
+        .setColorAttachments(colorAttachmentRef);
+
+    vk::RenderPassCreateInfo renderPassInfo{};
+    renderPassInfo.setAttachments(colorAttachment)
+        .setSubpasses(subpass);
+    m_RenderPass = m_Device.createRenderPass(renderPassInfo);
+    if (!m_RenderPass)  throw std::runtime_error("failed to create render pass!");
+}
+
 
 void HelloTriangleApplication::createGraphicsPipeline()
 {

@@ -13,3 +13,4 @@
 9. 渲染管线的介绍：`chapters/Introduction.md`
 10. 配置渲染管线：着色器模块：`chapters/ShaderModules.md`
 11. 配置渲染管线：固定功能：`chapters/FixedFunctions.md`
+12. 配置渲染管线：渲染通道：`chapters/RenderPasses.md`

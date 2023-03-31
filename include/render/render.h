@@ -83,6 +83,7 @@ private:
     std::vector<vk::ImageView> m_vecSwapChainImageViews;
     vk::Format m_SwapChainImageFormat;
     vk::Extent2D m_SwapChainExtent;
+    vk::RenderPass m_RenderPass;
     vk::PipelineLayout m_PipelineLayout;
     
 public:
@@ -125,5 +126,6 @@ private:
     void createLogicalDevice();
     void createSwapChain();
     void createImageViews();
+    void createRenderPass();
     void createGraphicsPipeline();
 };
