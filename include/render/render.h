@@ -85,6 +85,8 @@ private:
     vk::Extent2D m_SwapChainExtent;
     vk::RenderPass m_RenderPass;
     vk::PipelineLayout m_PipelineLayout;
+
+    vk::Pipeline m_GraphicsPipeline;
     
 public:
     void run();

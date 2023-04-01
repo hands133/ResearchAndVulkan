@@ -126,8 +126,7 @@ rasterizer.setDepthBiasEnable(false)
 
 ```cpp
 vk::PipelineMultisampleStateCreateInfo multisampling{};
-multisampling.setSampleShadingEnable(true)
-    .setSampleShadingEnable(true)
+multisampling.setSampleShadingEnable(false)
     .setRasterizationSamples(vk::SampleCountFlagBits::e1)
     .setMinSampleShading(1.0f)      // Optional
     .setPSampleMask(nullptr)        // Optional

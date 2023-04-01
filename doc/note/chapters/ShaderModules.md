@@ -244,7 +244,7 @@ vertShaderStageInfo.setStage(vk::ShaderStageFlagBits::eVertex)
 同样为片元着色器添加结构体：
 ```cpp
 vk::PipelineShaderStageCreateInfo fragShaderStageInfo{};
-fragShaderStageInfo.setStage(vk::ShaderStageFlagBits::eVertex)
+fragShaderStageInfo.setStage(vk::ShaderStageFlagBits::eFragment)
     .setModule(fragShaderModule)
     .setPName("main");
 ```
@@ -256,4 +256,3 @@ vk::PipelineShaderStageCreateInfo shaderStagesInfo[] =
 ```
 
 管线中可编程阶段的信息准备完成。接下来是固定功能阶段。
-

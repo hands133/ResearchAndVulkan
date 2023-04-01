@@ -48,6 +48,7 @@ void HelloTriangleApplication::mainLoop() {
 }
 
 void HelloTriangleApplication::cleanUp() {
+    m_Device.destroyPipeline(m_GraphicsPipeline);
     m_Device.destroyPipelineLayout(m_PipelineLayout);
     m_Device.destroyRenderPass(m_RenderPass);
 
@@ -306,7 +307,7 @@ void HelloTriangleApplication::createGraphicsPipeline()
         .setPName("main");
 
     vk::PipelineShaderStageCreateInfo fragShaderStageInfo{};
-    fragShaderStageInfo.setStage(vk::ShaderStageFlagBits::eVertex)
+    fragShaderStageInfo.setStage(vk::ShaderStageFlagBits::eFragment)
         .setModule(fragShaderModule)
         .setPName("main");
 
@@ -350,8 +351,7 @@ void HelloTriangleApplication::createGraphicsPipeline()
         .setDepthBiasSlopeFactor(0.0f);     // Optional
 
     vk::PipelineMultisampleStateCreateInfo multisampling{};
-    multisampling.setSampleShadingEnable(true)
-        .setSampleShadingEnable(true)
+    multisampling.setSampleShadingEnable(false)
         .setRasterizationSamples(vk::SampleCountFlagBits::e1)
         .setMinSampleShading(1.0f)  // Optional
         .setPSampleMask(nullptr)    // Optional
@@ -392,6 +392,26 @@ void HelloTriangleApplication::createGraphicsPipeline()
     m_PipelineLayout = m_Device.createPipelineLayout(pipelineLayoutInfo);
     if (!m_PipelineLayout)  throw std::runtime_error("failed to create pipeline layout!");
 
+    vk::GraphicsPipelineCreateInfo pipelineInfo{};
+    pipelineInfo.setStages(shaderStagesInfo)
+        .setPVertexInputState(&vertexInputInfo)
+        .setPInputAssemblyState(&inputAssembly)
+        .setPViewportState(&viewportState)
+        .setPRasterizationState(&rasterizer)
+        .setPMultisampleState(&multisampling)
+        .setPDepthStencilState(nullptr)     // Optional
+        .setPColorBlendState(&colorBlending)
+        .setPDynamicState(nullptr)      // Optional
+        .setLayout(m_PipelineLayout)
+        .setRenderPass(m_RenderPass)
+        .setSubpass(0)
+        .setBasePipelineHandle(nullptr) // OPtional
+        .setBasePipelineIndex(-1);  // Optional
+
+    auto pipeline  = m_Device.createGraphicsPipeline(nullptr, pipelineInfo);
+    if (pipeline.result != vk::Result::eSuccess)
+        throw std::runtime_error("failed to create graphics pipeline!");
+    m_GraphicsPipeline = pipeline.value;
 
     m_Device.destroy(fragShaderModule);
     m_Device.destroy(vertShaderModule);
