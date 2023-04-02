@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_core.h>
 #include <vulkan/vulkan_enums.hpp>
@@ -87,6 +86,8 @@ private:
     vk::PipelineLayout m_PipelineLayout;
 
     vk::Pipeline m_GraphicsPipeline;
+
+    std::vector<vk::Framebuffer> m_vecSwapchainFramebuffers;
     
 public:
     void run();
@@ -120,7 +121,6 @@ private:
 
     vk::ShaderModule createShaderModule(const std::vector<char>& code);
 
-
     void createInstance();
     void setupDebugMessenger();
     void createSurface();
@@ -130,4 +130,5 @@ private:
     void createImageViews();
     void createRenderPass();
     void createGraphicsPipeline();
+    void createFramebuffers();
 };

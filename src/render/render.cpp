@@ -39,6 +39,7 @@ void HelloTriangleApplication::initVulkan() {
     createImageViews();
     createRenderPass();
     createGraphicsPipeline();
+    createFramebuffers();
 }
 
 void HelloTriangleApplication::mainLoop() {
@@ -48,6 +49,9 @@ void HelloTriangleApplication::mainLoop() {
 }
 
 void HelloTriangleApplication::cleanUp() {
+    for (auto& framebuffer : m_vecSwapchainFramebuffers)
+        m_Device.destroyFramebuffer(framebuffer);
+
     m_Device.destroyPipeline(m_GraphicsPipeline);
     m_Device.destroyPipelineLayout(m_PipelineLayout);
     m_Device.destroyRenderPass(m_RenderPass);
@@ -416,6 +420,26 @@ void HelloTriangleApplication::createGraphicsPipeline()
     m_Device.destroy(fragShaderModule);
     m_Device.destroy(vertShaderModule);
 }
+
+void HelloTriangleApplication::createFramebuffers()
+{
+    m_vecSwapchainFramebuffers.resize(m_vecSwapChainImageViews.size());
+    for (size_t i = 0; i < m_vecSwapChainImageViews.size(); ++i) {
+        vk::ImageView attachments[] = { m_vecSwapChainImageViews[i] };
+        
+        vk::FramebufferCreateInfo framebufferInfo{};
+        framebufferInfo.setRenderPass(m_RenderPass)
+            .setAttachments(attachments)
+            .setWidth(m_SwapChainExtent.width)
+            .setHeight(m_SwapChainExtent.height)
+            .setLayers(1);
+        
+        m_vecSwapchainFramebuffers[i] = m_Device.createFramebuffer(framebufferInfo);
+        if (!m_vecSwapchainFramebuffers[i])
+            throw std::runtime_error("failed to create framebuffer!");
+    }
+}
+
 
 bool HelloTriangleApplication::isDeviceSuitable(vk::PhysicalDevice device) {
     QueueFamilyIndices indices = findQueueFamilies(device);
