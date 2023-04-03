@@ -40,6 +40,8 @@ void HelloTriangleApplication::initVulkan() {
     createRenderPass();
     createGraphicsPipeline();
     createFramebuffers();
+    createCommandPool();
+    createCommandBuffer();
 }
 
 void HelloTriangleApplication::mainLoop() {
@@ -49,6 +51,8 @@ void HelloTriangleApplication::mainLoop() {
 }
 
 void HelloTriangleApplication::cleanUp() {
+    m_Device.destroyCommandPool(m_CommandPool);
+
     for (auto& framebuffer : m_vecSwapchainFramebuffers)
         m_Device.destroyFramebuffer(framebuffer);
 
@@ -440,6 +444,27 @@ void HelloTriangleApplication::createFramebuffers()
     }
 }
 
+void HelloTriangleApplication::createCommandPool()
+{
+    QueueFamilyIndices queueFamilyIndices = findQueueFamilies(m_PhysicalDevice);
+
+    vk::CommandPoolCreateInfo poolInfo{};
+    poolInfo.setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer)
+        .setQueueFamilyIndex(queueFamilyIndices.graphicsFamily.value());
+
+    m_CommandPool = m_Device.createCommandPool(poolInfo);
+    if (!m_CommandPool) throw std::runtime_error("failed to create command pool!");
+}
+
+void HelloTriangleApplication::createCommandBuffer()
+{
+    vk::CommandBufferAllocateInfo allocInfo{};
+    allocInfo.setCommandPool(m_CommandPool)
+        .setLevel(vk::CommandBufferLevel::ePrimary)
+        .setCommandBufferCount(1);
+    auto commandBuffer = m_Device.allocateCommandBuffers(allocInfo);
+    m_CommandBuffer = commandBuffer.front();
+}
 
 bool HelloTriangleApplication::isDeviceSuitable(vk::PhysicalDevice device) {
     QueueFamilyIndices indices = findQueueFamilies(device);
@@ -568,6 +593,31 @@ vk::ShaderModule HelloTriangleApplication::createShaderModule(const std::vector<
     if (!shaderModule)  throw std::runtime_error("failed to create shader module!");
 
     return shaderModule;
+}
+
+void HelloTriangleApplication::recordCommandBuffer(vk::CommandBuffer, uint32_t imageIndex)
+{
+    vk::CommandBufferBeginInfo beginInfo{};
+    beginInfo.setFlags(vk::CommandBufferUsageFlags{0})  // Optional
+        .setPInheritanceInfo(nullptr);  // Optional
+
+    m_CommandBuffer.begin(beginInfo);
+
+    vk::RenderPassBeginInfo renderPassInfo{};
+    renderPassInfo.setRenderPass(m_RenderPass)
+        .setFramebuffer(m_vecSwapchainFramebuffers[imageIndex])
+        .setRenderArea(vk::Rect2D({0, 0}, m_SwapChainExtent));
+
+    vk::ClearValue clearColor({ 0.0f, 0.0f, 0.0f, 1.0f });
+    renderPassInfo.setClearValues(clearColor);
+
+    m_CommandBuffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
+    m_CommandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_GraphicsPipeline);
+
+    m_CommandBuffer.draw(3, 1, 0, 0);
+
+    m_CommandBuffer.endRenderPass();
+    m_CommandBuffer.end();
 }
 
 

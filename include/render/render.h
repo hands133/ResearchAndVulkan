@@ -86,9 +86,11 @@ private:
     vk::PipelineLayout m_PipelineLayout;
 
     vk::Pipeline m_GraphicsPipeline;
-
     std::vector<vk::Framebuffer> m_vecSwapchainFramebuffers;
-    
+
+    vk::CommandPool m_CommandPool;
+    vk::CommandBuffer m_CommandBuffer;
+
 public:
     void run();
 
@@ -120,7 +122,8 @@ private:
     vk::Extent2D chooseSwapExtent(const vk::SurfaceCapabilitiesKHR& capabilities);
 
     vk::ShaderModule createShaderModule(const std::vector<char>& code);
-
+    void recordCommandBuffer(vk::CommandBuffer, uint32_t imageIndex);
+    
     void createInstance();
     void setupDebugMessenger();
     void createSurface();
@@ -131,4 +134,6 @@ private:
     void createRenderPass();
     void createGraphicsPipeline();
     void createFramebuffers();
+    void createCommandPool();
+    void createCommandBuffer();
 };
