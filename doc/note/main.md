@@ -17,3 +17,4 @@
 13. 配置渲染管线：总结：`chapters/PipelineConclusion.md`
 14. 帧缓冲：`chapters/Framebuffers.md`
 15. 命令缓冲区：`chapters/Commandbuffers.md`
+16. 渲染和呈现：`chapters/RenderingAndPresentation.md`

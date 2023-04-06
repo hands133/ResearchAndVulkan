@@ -124,6 +124,10 @@ private:
     vk::ShaderModule createShaderModule(const std::vector<char>& code);
     void recordCommandBuffer(vk::CommandBuffer, uint32_t imageIndex);
     
+    vk::Semaphore m_ImageAvailableSemaphore;
+    vk::Semaphore m_RenderFinishedSemaphore;
+    vk::Fence m_InFlightFence;
+
     void createInstance();
     void setupDebugMessenger();
     void createSurface();
@@ -136,4 +140,8 @@ private:
     void createFramebuffers();
     void createCommandPool();
     void createCommandBuffer();
+    void createSyncObjects();
+
+    // render functions
+    void drawFrame();
 };
