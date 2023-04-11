@@ -128,7 +128,7 @@ uint32_t HelloTriangleApplication::findQueueFamilies(vk::PhysicalDevice device) 
 
 不过后面还需要别的队列，最好是能把下标存在结构体里：
 ```cpp
-struct QueueFamilyIndices{ uint32_t graphihcsFamily; };
+struct QueueFamilyIndices{ uint32_t graphicsFamily; };
 
 HelloTriangleApplication::QueueFamilyIndices
 HelloTriangleApplication::findQueueFamilies(vk::PhysicalDevice device)
@@ -141,7 +141,7 @@ HelloTriangleApplication::findQueueFamilies(vk::PhysicalDevice device)
 
 如果队列族不可用，可以在 `findQueueFamilies` 中抛出异常，但是这个函数不是决定设备适定性的正确地方。这里需要一个表示确切的队列族是否被找到的方式：
 ```cpp
-struct QueueFamilyIndices{ std::optional<uint32_t> graphihcsFamily; };
+struct QueueFamilyIndices{ std::optional<uint32_t> graphicsFamily; };
 HelloTriangleApplication::QueueFamilyIndices
 HelloTriangleApplication::findQueueFamilies(vk::PhysicalDevice device)
 {
@@ -168,7 +168,7 @@ int i = 0;
 for (const auto& queueFamily : queueFamilyProperties)
 {
     if (queueFamily.queueFlags & vk::QueueFlagBits::eGraphics)
-        indices.graphihcsFamily = i;
+        indices.graphicsFamily = i;
     ++i;
 }
 ```
@@ -176,7 +176,7 @@ for (const auto& queueFamily : queueFamilyProperties)
 ```cpp
 bool HelloTriangleApplication::isDeviceSuitable(vk::PhysicalDevice device) {
     QueueFamilyIndices indices = findQueueFamilies(device);
-    return indices.graphihcsFamily.has_value();
+    return indices.graphicsFamily.has_value();
 }
 ```
 

@@ -98,7 +98,7 @@ save_screenshot_to_disk() // can't run until the transfer has finished
 
 创建三个类成员存储信号量和围栏对象：
 ```cpp
-vk::Semaphore m_IMageAvailableSemaphore;
+vk::Semaphore m_ImageAvailableSemaphore;
 vk::Semaphore m_RenderFinishedSemaphore;
 vk::Fence m_InFlightFence;
 ```
@@ -280,7 +280,7 @@ vk::PresentInfoKHR presentInfo{};
 presentInfo.setWaitSemaphores(signalSemaphores);
 ```
 
-参数指定在呈现之前等待哪个信号量，类似 `VkSubmitInfo`，因为想要等待命令缓冲区完成执行，三角形就被绘制出来了，所以我们取将要发出信号的信号量并等待它们，因此我们使用 `setWaitSemaphores`。
+参数指定在呈现之前等待哪个信号量，类似 `vk::SubmitInfo`，因为想要等待命令缓冲区完成执行，三角形就被绘制出来了，所以我们取将要发出信号的信号量并等待它们，因此我们使用 `setWaitSemaphores`。
 
 ```cpp
 vk::SwapchainKHR swapChains[] = { m_SwapChain };

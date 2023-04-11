@@ -6,7 +6,7 @@
 3. 验证层：`chapters/ValidationLayer.md`
 4. 物理设备与队列族：`chapters/PhysicalDeviceAndQueueFamilies.md`
 5. 逻辑设备与队列：
-`chapters/LogialDeviceAndQueues`
+`chapters/LogicalDeviceAndQueues.md`
 6. 窗口表面：`chapters/WindowSurface.md`
 7. 交换链：`chapters/Swapchain.md`
 8. 图像视图：`chapters/ImageViews.md`
@@ -18,3 +18,4 @@
 14. 帧缓冲：`chapters/Framebuffers.md`
 15. 命令缓冲区：`chapters/Commandbuffers.md`
 16. 渲染和呈现：`chapters/RenderingAndPresentation.md`
+17. 在线帧：`chapters/FramesInFlight.md`

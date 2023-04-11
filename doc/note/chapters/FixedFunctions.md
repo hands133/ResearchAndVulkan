@@ -205,7 +205,7 @@ colorBlending.setLogicOpEnable(false)
 
 ### 动态阶段（Dynamic state）
 
-前面的结构体中指定的有限数量的状态可以在不重新创建管道的情况下更改。例如视口的大小、行宽和混合系数。如果要进行修改，必须填写一个 `VkPipelineDynamicStateCreateInfo` 结构体：
+前面的结构体中指定的有限数量的状态可以在不重新创建管道的情况下更改。例如视口的大小、行宽和混合系数。如果要进行修改，必须填写一个 `vk::PipelineDynamicStateCreateInfo` 结构体：
 ```cpp
 std::vector<vk::DynamicState> dynamicStates {
     vk::DynamicState::eViewport,

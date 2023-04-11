@@ -6,7 +6,7 @@
 
 为此创建另一个 `std::vector` 类成员保存帧缓冲：
 ```cpp
-std::vector<vk::Framebuffer> m_SwapchainFramebuffers;
+std::vector<vk::Framebuffer> m_vecSwapchainFramebuffers;
 ```
 
 添加新函数 `createFramebuffers` 中为数组创建对象，该函数在创建图形管线后立即在 `initVulkan` 里调用：

@@ -100,7 +100,7 @@ void HelloTriangleApplication::cleanUp() {
 ```
 > 逻辑设备不直接与 `vk::Instance` 交互，所以没有什么参数。
 
-### 获取队列举兵
+### 获取队列句柄
 
 队列是随着逻辑设备的创建一同创建的，但是我们没有能与之对接的句柄。添加成员：
 ```cpp

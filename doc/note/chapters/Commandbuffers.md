@@ -127,7 +127,7 @@ beginInfo.setFlags(vk::CommandBufferUsageFlags{0})  // Optional
 
 ### 启动一个渲染通道
 
-绘制开始于使用 ` ` 启动渲染通道。渲染通道使用 `vk::RenderPassBeginInfo` 结构的参数进行配置。
+绘制开始于使用 `vk::RenderPassBeginInfo` 启动渲染通道。渲染通道使用 `vk::RenderPassBeginInfo` 结构的参数进行配置。
 
 ```cpp
 vk::RenderPassBeginInfo renderPassInfo{};

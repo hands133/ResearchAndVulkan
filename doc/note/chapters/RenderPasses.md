@@ -57,7 +57,7 @@ colorAttachment.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
 `setLoadOp` 和 `setStoreOp` 用在颜色和深度值上，`setStencilLoadOp` 和 `setStencilStoreOp` 应用在模板数据上。本程序不会涉及到模板缓冲，所以结果和加载和存储无关。
 
 ```cpp
-COLORaTTACHMENT.setInitialLayout(vk::ImageLayout::eUndefined)
+colorAttachment.setInitialLayout(vk::ImageLayout::eUndefined)
     .setFinalLayout(vk::ImageLayout::ePresentSrcKHR);
 ```
 
@@ -70,7 +70,7 @@ Vulkan 中的纹理和帧缓冲由固定格式的 `vk::Image` 对象表示，然
 
 `setInitialLayout` 指定在渲染通道开始之前图像具有的布局。`setFinalLayout` 指定渲染传递结束时要自动转换到的布局。对于 `setInitialLayout` 使用 `vk::ImageLayout::eUndefined` 表示不关心图像之前的布局。需要注意的是图像的内容不保证会被保留。希望图像在呈现后使用交换链准备好呈现，所以使用 `vk::ImageLayout::ePresentSrcKHR` 作为最终布局。
 
-### 子通道和福建引用
+### 子通道和附件引用
 
 一个渲染通道由多个子通道组成。子通道依赖于之前传递中的帧缓冲内容的后续呈现操作，例如一个接一个应用的后处理效果序列。如果将这些呈现操作分组到一个呈现通道中，那么 Vulkan 能够重新排列这些操作并节省内存带宽，从而可能获得更好的性能。对于第一个三角形，这里只使用一个子通道。
 

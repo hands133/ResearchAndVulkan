@@ -40,7 +40,7 @@ VkResult vkCreateInstance(
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
 
-const std::vector<const char *> m_VecValidationLayers = {
+const std::vector<const char *> m_vecValidationLayers = {
     "VK_LAYER_KHRONOS_validation"
 };
 #ifdef NDEBUG
@@ -95,7 +95,7 @@ void HelloTriangleApplication::createInstance() {
         createInfo.setPEnabledLayerNames(m_VecValidationLayers);
 }
 ```
-成功的话 `vk::CreateInstance` 不会抛出异常。如果写错 `m_VecValidationLayers` 中的层名且跳过了 `checkValidationLayerSupport` 检查，`vk::CreateInstance` 将会抛出异常。
+成功的话 `vk::CreateInstance` 不会抛出异常。如果写错 `m_vecValidationLayers` 中的层名且跳过了 `checkValidationLayerSupport` 检查，`vk::CreateInstance` 将会抛出异常。
 
 ### 信息回调函数
 
