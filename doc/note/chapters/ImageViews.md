@@ -74,6 +74,15 @@ auto& view = m_vecSwapChainImageViews.emplace_back(m_Device.createImageView(crea
 if (!view)  throw std::runtime_error("failed to create image views!");
 ```
 
+注意要在函数一开始释放空间：
+```cpp
+void HelloTriangleApplication::createImageViews()
+{
+    m_vecSwapChainImageViews.clear();
+    ...
+}
+```
+
 与 `vk::Image` 不同，图像视图是被显式创建的，所以需要显式销毁：
 ```cpp
 void HelloTriangleApplication::cleanUp() {

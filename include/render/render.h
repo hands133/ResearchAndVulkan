@@ -34,6 +34,8 @@ static std::vector<char> readFile(const std::string& filename) {
 }
 
 class HelloTriangleApplication {
+public:
+    bool m_FramebufferResized = false;
 private:
     // GLFW members
     GLFWwindow *m_pWindow{ nullptr };
@@ -51,6 +53,8 @@ private:
 #else
     const bool m_EnableValidationLayers = true;
 #endif
+    const int MAX_FRAMES_IN_FLIGHT = 2;
+    uint32_t m_CurrentFrame = 0;
 
     // struct
     struct QueueFamilyIndices{ 
@@ -89,7 +93,12 @@ private:
     std::vector<vk::Framebuffer> m_vecSwapchainFramebuffers;
 
     vk::CommandPool m_CommandPool;
-    vk::CommandBuffer m_CommandBuffer;
+
+    std::vector<vk::CommandBuffer> m_vecCommandBuffers;
+    
+    std::vector<vk::Semaphore> m_vecImageAvailableSemaphores;
+    std::vector<vk::Semaphore> m_vecRenderFinishedSemaphores;
+    std::vector<vk::Fence> m_vecInFlightFences;
 
 public:
     void run();
@@ -123,10 +132,6 @@ private:
 
     vk::ShaderModule createShaderModule(const std::vector<char>& code);
     void recordCommandBuffer(vk::CommandBuffer, uint32_t imageIndex);
-    
-    vk::Semaphore m_ImageAvailableSemaphore;
-    vk::Semaphore m_RenderFinishedSemaphore;
-    vk::Fence m_InFlightFence;
 
     void createInstance();
     void setupDebugMessenger();
@@ -139,8 +144,11 @@ private:
     void createGraphicsPipeline();
     void createFramebuffers();
     void createCommandPool();
-    void createCommandBuffer();
+    void createCommandBuffers();
     void createSyncObjects();
+
+    void recreateSwapChain();
+    void cleanupSwapChain();
 
     // render functions
     void drawFrame();

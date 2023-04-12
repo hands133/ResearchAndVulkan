@@ -18,4 +18,5 @@
 14. 帧缓冲：`chapters/Framebuffers.md`
 15. 命令缓冲区：`chapters/Commandbuffers.md`
 16. 渲染和呈现：`chapters/RenderingAndPresentation.md`
-17. 在线帧：`chapters/FramesInFlight.md`
+17. 在线帧（双缓冲队列）：`chapters/FramesInFlight.md`
+18. 重新创建交换链：`chapters/SwapchainRecreation.md`
