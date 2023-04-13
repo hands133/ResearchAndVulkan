@@ -199,6 +199,7 @@ static void framebufferResizeCallback(GLFWwindow* window, int width, int height)
     app->m_FramebufferResized = true;   
 }
 ```
+> 注意缩放窗口时所用到的与交换链相关的对象创建函数，如果调用了 `std::vector` 的 `emplace_back`，需要在之前清理`vector`。
 
 ### 处理最小化窗口
 
