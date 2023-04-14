@@ -486,31 +486,30 @@ void HelloTriangleApplication::createCommandPool()
 
 void HelloTriangleApplication::createVertexBuffer()
 {
-    vk::BufferCreateInfo bufferInfo{};
-    bufferInfo.setSize(sizeof(Vertex) * vertices.size())
-        .setUsage(vk::BufferUsageFlagBits::eVertexBuffer)
-        .setSharingMode(vk::SharingMode::eExclusive);
-
-    m_VertexBuffer = m_Device.createBuffer(bufferInfo);
-    if(!m_VertexBuffer) throw std::runtime_error("failed to create vertex buffer!");
-
-    vk::MemoryRequirements memRequirements = m_Device.getBufferMemoryRequirements(m_VertexBuffer);
-
-    vk::MemoryAllocateInfo allocInfo{};
-    allocInfo.setAllocationSize(memRequirements.size)
-        .setMemoryTypeIndex(
-            findMemoryType(memRequirements.memoryTypeBits, 
-                vk::MemoryPropertyFlagBits::eHostVisible |
-                vk::MemoryPropertyFlagBits::eHostCoherent));
-    m_VertexBufferMemory = m_Device.allocateMemory(allocInfo);
-    if (!m_VertexBufferMemory)  throw std::runtime_error("failed to allocate vertex buffer memory!");
-
-    m_Device.bindBufferMemory(m_VertexBuffer, m_VertexBufferMemory, 0);
-
+    vk::DeviceSize bufferSize = sizeof(Vertex) * vertices.size();
+    
+    vk::Buffer stagingBuffer;
+    vk::DeviceMemory stagingBufferMemory;
+    createBuffer(bufferSize, vk::BufferUsageFlagBits::eTransferSrc,
+        vk::MemoryPropertyFlagBits::eHostVisible |
+        vk::MemoryPropertyFlagBits::eHostCoherent,
+        stagingBuffer, stagingBufferMemory);
+    
     void* data;
-    const auto&_ = m_Device.mapMemory(m_VertexBufferMemory, 0, bufferInfo.size, vk::MemoryMapFlags{0}, &data);
-    memcpy(data, vertices.data(), bufferInfo.size);
-    m_Device.unmapMemory(m_VertexBufferMemory);
+    const auto&_ = m_Device.mapMemory(stagingBufferMemory, 0, bufferSize, vk::MemoryMapFlags{0}, &data);
+    memcpy(data, vertices.data(), bufferSize);
+    m_Device.unmapMemory(stagingBufferMemory);
+
+    createBuffer(bufferSize,
+        vk::BufferUsageFlagBits::eTransferDst |
+        vk::BufferUsageFlagBits::eVertexBuffer,
+        vk::MemoryPropertyFlagBits::eDeviceLocal,
+        m_VertexBuffer, m_VertexBufferMemory);
+    
+    copyBuffer(stagingBuffer, m_VertexBuffer, bufferSize);
+
+    m_Device.destroyBuffer(stagingBuffer);
+    m_Device.freeMemory(stagingBufferMemory);
 }
 
 void HelloTriangleApplication::createCommandBuffers()
@@ -745,6 +744,63 @@ uint32_t HelloTriangleApplication::findMemoryType(uint32_t typeFilter, vk::Memor
 
     throw std::runtime_error("failed to find suitable memory type!");
 }
+
+
+void HelloTriangleApplication::createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage,
+                vk::MemoryPropertyFlags properties, vk::Buffer& buffer, vk::DeviceMemory& bufferMemory)
+{
+    vk::BufferCreateInfo bufferInfo{};
+    bufferInfo.setSize(size)
+        .setUsage(usage)
+        .setSharingMode(vk::SharingMode::eExclusive);
+
+    buffer = m_Device.createBuffer(bufferInfo);
+    if (!buffer) throw std::runtime_error("failed to create buffer!");
+
+    vk::MemoryRequirements memRequirements = m_Device.getBufferMemoryRequirements(buffer);
+
+    vk::MemoryAllocateInfo allocInfo{};
+    allocInfo.setAllocationSize(memRequirements.size)
+        .setMemoryTypeIndex(findMemoryType(memRequirements.memoryTypeBits, properties));
+
+    bufferMemory = m_Device.allocateMemory(allocInfo);
+    if (!bufferMemory)  throw std::runtime_error("failed to allocate buffer memory!");
+
+    m_Device.bindBufferMemory(buffer, bufferMemory, 0);
+}
+
+void HelloTriangleApplication::copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size)
+{
+    vk::CommandBufferAllocateInfo allocInfo{};
+    allocInfo.setLevel(vk::CommandBufferLevel::ePrimary)
+        .setCommandPool(m_CommandPool)
+        .setCommandBufferCount(1);
+
+    vk::CommandBuffer commandBuffer = m_Device.allocateCommandBuffers(allocInfo).front();
+
+    vk::CommandBufferBeginInfo beginInfo{};
+    beginInfo.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+
+    commandBuffer.begin(beginInfo);
+
+    vk::BufferCopy copyRegin{};
+    copyRegin.setSrcOffset(0)
+        .setDstOffset(0)
+        .setSize(size);
+
+    commandBuffer.copyBuffer(srcBuffer, dstBuffer, copyRegin);
+
+    commandBuffer.end();
+
+    vk::SubmitInfo submitInfo{};
+    submitInfo.setCommandBuffers(commandBuffer);
+
+    m_GraphicsQueue.submit(submitInfo);
+    m_GraphicsQueue.waitIdle();
+
+    m_Device.freeCommandBuffers(m_CommandPool, commandBuffer);
+}
+
 
 void HelloTriangleApplication::createInstance() {
     if (m_EnableValidationLayers && !checkValidationLayerSupport())

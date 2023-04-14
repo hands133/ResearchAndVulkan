@@ -22,3 +22,4 @@
 18. 重新创建交换链：`chapters/SwapchainRecreation.md`
 19. 顶点输入描述：`chapters/VertexInputDescription.md`
 20. 创建顶点缓冲区：`chapters/VertexBufferCreation.md`
+21. 暂存缓冲区：`chapters/StagingBuffer.md`

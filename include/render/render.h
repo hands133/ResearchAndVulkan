@@ -183,6 +183,10 @@ private:
 
     uint32_t findMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags propertyFlags);
 
+    void createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage,
+                    vk::MemoryPropertyFlags properties, vk::Buffer& buffer, vk::DeviceMemory& bufferMemory);
+    void copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size);
+    
     void createInstance();
     void setupDebugMessenger();
     void createSurface();
@@ -200,6 +204,7 @@ private:
 
     void recreateSwapChain();
     void cleanupSwapChain();
+
 
     // render functions
     void drawFrame();
