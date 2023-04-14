@@ -20,3 +20,5 @@
 16. 渲染和呈现：`chapters/RenderingAndPresentation.md`
 17. 在线帧（双缓冲队列）：`chapters/FramesInFlight.md`
 18. 重新创建交换链：`chapters/SwapchainRecreation.md`
+19. 顶点输入描述：`chapters/VertexInputDescription.md`
+20. 创建顶点缓冲区：`chapters/VertexBufferCreation.md`

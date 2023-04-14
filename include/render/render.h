@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_core.h>
 #include <vulkan/vulkan_enums.hpp>
@@ -8,12 +9,56 @@
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
 
+#include <array>
 #include <optional>
 #include <iostream>
 #include <fstream>
 #include <cstdint>
 #include <stdexcept>
+
+struct Vertex{
+    glm::vec2 pos;
+    glm::vec3 color;
+
+    static vk::VertexInputBindingDescription getBindingDescription() {
+        vk::VertexInputBindingDescription bindingDescription{};
+
+        bindingDescription.setBinding(0)
+            .setStride(sizeof(Vertex))
+            .setInputRate(vk::VertexInputRate::eVertex);
+
+        return bindingDescription;
+    }
+
+    static std::array<vk::VertexInputAttributeDescription, 2> getAttributeDescriptions() {
+        std::array<vk::VertexInputAttributeDescription, 2> attributeDescriptions{};
+
+        attributeDescriptions[0].setBinding(0)
+            .setLocation(0)
+            .setFormat(vk::Format::eR32G32Sfloat)
+            .setOffset(offsetof(Vertex, Vertex::pos));
+        
+        attributeDescriptions[1].setBinding(0)
+            .setLocation(1)
+            .setFormat(vk::Format::eR32G32B32Sfloat)
+            .setOffset(offsetof(Vertex, Vertex::color));
+        return attributeDescriptions;
+    }
+};
+
+// const std::vector<Vertex> vertices = {
+//     { {  0.0f, -0.5f }, { 1.0f, 0.0f, 0.0f } },
+//     { {  0.5f,  0.5f }, { 0.0f, 1.0f, 0.0f } },
+//     { { -0.5f,  0.5f }, { 0.0f, 0.0f, 1.0f } }
+// };
+
+const std::vector<Vertex> vertices = {
+    { {  0.0f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
+    { {  0.5f,  0.5f }, { 0.0f, 1.0f, 0.0f } },
+    { { -0.5f,  0.5f }, { 0.0f, 0.0f, 1.0f } }
+};
 
 static std::vector<char> readFile(const std::string& filename) {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
@@ -100,6 +145,9 @@ private:
     std::vector<vk::Semaphore> m_vecRenderFinishedSemaphores;
     std::vector<vk::Fence> m_vecInFlightFences;
 
+    vk::Buffer m_VertexBuffer;
+    vk::DeviceMemory m_VertexBufferMemory;
+
 public:
     void run();
 
@@ -133,6 +181,8 @@ private:
     vk::ShaderModule createShaderModule(const std::vector<char>& code);
     void recordCommandBuffer(vk::CommandBuffer, uint32_t imageIndex);
 
+    uint32_t findMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags propertyFlags);
+
     void createInstance();
     void setupDebugMessenger();
     void createSurface();
@@ -144,6 +194,7 @@ private:
     void createGraphicsPipeline();
     void createFramebuffers();
     void createCommandPool();
+    void createVertexBuffer();
     void createCommandBuffers();
     void createSyncObjects();
 

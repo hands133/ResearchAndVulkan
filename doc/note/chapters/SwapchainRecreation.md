@@ -108,16 +108,28 @@ else if (value.result != vk::Result::eSuccess && value.result != vk::Result::eSu
 
 如果交换链不是最优的，用户也可以决定继续进行，因为已经获得了一个图像。`vk::Result::eSuccess` 和 `vk::Result::eSuboptimalKHR` 都被认为是“成功”返回值。
 ```cpp
-auto result = m_PresentQueue.presentKHR(presentInfo);
-if (result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eSuboptimalKHR)
+vk::Result result = vk::Result::eSuccess;
+try
+{
+    result = m_PresentQueue.presentKHR(presentInfo);
+}
+catch (vk::OutOfDateKHRError const&)
+{
+    result = vk::Result::eErrorOutOfDateKHR;
+}
+if (result == vk::Result::eSuboptimalKHR || result == vk::Result::eErrorOutOfDateKHR)
     recreateSwapChain();
+
 else if (result != vk::Result::eSuccess)
     throw std::runtime_error("presentKHR failed!");
+
 
 m_CurrentFrame = (m_CurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 ```
 
 `m_PresentQueue.presentKHR` 函数返回具有相同含义的相同值。在这种情况下，如果交换链不是最优的，也重新创建交换链，因为我们希望得到最好的结果。
+
+> 注意这里用到了 `try-catch`，因为如果出现 `vk::Result::eErrorOutOfDateKHR`，则 `presentKHR` 会直接抛出错误 `vk::OutOfDateKHRError`。这里与教程代码相差较大。
 
 ### 解决死锁
 
