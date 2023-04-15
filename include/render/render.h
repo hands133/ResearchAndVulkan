@@ -38,12 +38,12 @@ struct Vertex{
         attributeDescriptions[0].setBinding(0)
             .setLocation(0)
             .setFormat(vk::Format::eR32G32Sfloat)
-            .setOffset(offsetof(Vertex, Vertex::pos));
+            .setOffset(offsetof(Vertex, pos));
         
         attributeDescriptions[1].setBinding(0)
             .setLocation(1)
             .setFormat(vk::Format::eR32G32B32Sfloat)
-            .setOffset(offsetof(Vertex, Vertex::color));
+            .setOffset(offsetof(Vertex, color));
         return attributeDescriptions;
     }
 };
@@ -54,10 +54,22 @@ struct Vertex{
 //     { { -0.5f,  0.5f }, { 0.0f, 0.0f, 1.0f } }
 // };
 
+// const std::vector<Vertex> vertices = {
+//     { {  0.0f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
+//     { {  0.5f,  0.5f }, { 0.0f, 1.0f, 0.0f } },
+//     { { -0.5f,  0.5f }, { 0.0f, 0.0f, 1.0f } }
+// };
+
 const std::vector<Vertex> vertices = {
-    { {  0.0f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
-    { {  0.5f,  0.5f }, { 0.0f, 1.0f, 0.0f } },
-    { { -0.5f,  0.5f }, { 0.0f, 0.0f, 1.0f } }
+    { { -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f } },
+    { {  0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f } },
+    { {  0.5f,  0.5f }, { 0.0f, 0.0f, 1.0f } },
+    { { -0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } }
+};
+
+const std::vector<uint16_t> indices = {
+    0, 1, 2,
+    2, 3, 0
 };
 
 static std::vector<char> readFile(const std::string& filename) {
@@ -147,6 +159,8 @@ private:
 
     vk::Buffer m_VertexBuffer;
     vk::DeviceMemory m_VertexBufferMemory;
+    vk::Buffer m_IndexBuffer;
+    vk::DeviceMemory m_IndexBufferMemory;
 
 public:
     void run();
@@ -199,6 +213,7 @@ private:
     void createFramebuffers();
     void createCommandPool();
     void createVertexBuffer();
+    void createIndexBuffer();
     void createCommandBuffers();
     void createSyncObjects();
 

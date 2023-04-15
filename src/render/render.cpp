@@ -50,6 +50,7 @@ void HelloTriangleApplication::initVulkan() {
     createFramebuffers();
     createCommandPool();
     createVertexBuffer();
+    createIndexBuffer();
     createCommandBuffers();
     createSyncObjects();
 }
@@ -65,6 +66,9 @@ void HelloTriangleApplication::mainLoop() {
 
 void HelloTriangleApplication::cleanUp() {
     cleanupSwapChain();
+
+    m_Device.destroyBuffer(m_IndexBuffer);
+    m_Device.freeMemory(m_IndexBufferMemory);
 
     m_Device.destroyBuffer(m_VertexBuffer);
     m_Device.freeMemory(m_VertexBufferMemory);
@@ -125,7 +129,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL HelloTriangleApplication::debugCallback(
     VkDebugUtilsMessageTypeFlagsEXT messageTypes,
     const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
     void *pUserData) {
-    std::cerr << "validation layer" << pCallbackData->pMessage << std::endl;
+    std::cerr << "[validation] " << pCallbackData->pMessage << std::endl;
 
     if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {}
     return VK_FALSE;
@@ -152,8 +156,14 @@ void HelloTriangleApplication::createSurface()
 void HelloTriangleApplication::populateDebugMessengerCreateInfo(vk::DebugUtilsMessengerCreateInfoEXT &createInfo) {
     createInfo = vk::DebugUtilsMessengerCreateInfoEXT();
     createInfo.setMessageSeverity(
-                  vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError)
-        .setMessageType(vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance)
+            vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose |
+            vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
+            // vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo |
+            vk::DebugUtilsMessageSeverityFlagBitsEXT::eError)
+        .setMessageType(
+            vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
+            vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
+            vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance)
         .setPfnUserCallback(debugCallback)
         .setPUserData(nullptr); // optional
 }
@@ -512,6 +522,35 @@ void HelloTriangleApplication::createVertexBuffer()
     m_Device.freeMemory(stagingBufferMemory);
 }
 
+void HelloTriangleApplication::createIndexBuffer()
+{
+    vk::DeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+
+    vk::Buffer stagingBuffer;
+    vk::DeviceMemory stagingBufferMemory;
+    createBuffer(bufferSize, 
+        vk::BufferUsageFlagBits::eTransferSrc,
+        vk::MemoryPropertyFlagBits::eHostVisible |
+        vk::MemoryPropertyFlagBits::eHostCoherent,
+        stagingBuffer, stagingBufferMemory);
+    
+    void* data;
+    const auto&_ = m_Device.mapMemory(stagingBufferMemory, 0, bufferSize, vk::MemoryMapFlags{0}, &data);
+    memcpy(data, indices.data(), bufferSize);
+    m_Device.unmapMemory(stagingBufferMemory);
+
+    createBuffer(bufferSize, 
+        vk::BufferUsageFlagBits::eTransferDst |
+        vk::BufferUsageFlagBits::eIndexBuffer,
+        vk::MemoryPropertyFlagBits::eDeviceLocal,
+        m_IndexBuffer, m_IndexBufferMemory);
+    
+    copyBuffer(stagingBuffer, m_IndexBuffer, bufferSize);
+
+    m_Device.destroyBuffer(stagingBuffer);
+    m_Device.freeMemory(stagingBufferMemory);
+}
+
 void HelloTriangleApplication::createCommandBuffers()
 {
     vk::CommandBufferAllocateInfo allocInfo{};
@@ -704,13 +743,12 @@ vk::ShaderModule HelloTriangleApplication::createShaderModule(const std::vector<
     return shaderModule;
 }
 
-void HelloTriangleApplication::recordCommandBuffer(vk::CommandBuffer, uint32_t imageIndex)
+void HelloTriangleApplication::recordCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t imageIndex)
 {
     vk::CommandBufferBeginInfo beginInfo{};
     beginInfo.setFlags(vk::CommandBufferUsageFlags{0})  // Optional
         .setPInheritanceInfo(nullptr);  // Optional
         
-    auto& commandBuffer = m_vecCommandBuffers[m_CurrentFrame];
     commandBuffer.begin(beginInfo);
 
     vk::RenderPassBeginInfo renderPassInfo{};
@@ -725,10 +763,11 @@ void HelloTriangleApplication::recordCommandBuffer(vk::CommandBuffer, uint32_t i
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_GraphicsPipeline);
 
     vk::Buffer vertexBuffers[] = { m_VertexBuffer };
-    vk::DeviceSize offset[] = { 0 };
-    commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offset);
-
-    commandBuffer.draw(vertices.size(), 1, 0, 0);
+    vk::DeviceSize offsets[] = { 0 };
+    commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
+    commandBuffer.bindIndexBuffer(m_IndexBuffer, 0, vk::IndexType::eUint16);
+    
+    commandBuffer.drawIndexed(indices.size(), 1, 0, 0, 0);
 
     commandBuffer.endRenderPass();
     commandBuffer.end();
