@@ -24,3 +24,4 @@
 20. 创建顶点缓冲区：`chapters/VertexBufferCreation.md`
 21. 暂存缓冲区：`chapters/StagingBuffer.md`
 22. 索引缓冲区：`chapters/IndexBuffer.md`
+23. 描述符布局和缓冲区：`chapters/DescriptorLayoutAndBuffer.md`

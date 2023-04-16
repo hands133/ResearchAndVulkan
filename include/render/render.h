@@ -1,5 +1,6 @@
 #pragma once
 
+#include "glm/fwd.hpp"
 #include <cstddef>
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_core.h>
@@ -47,6 +48,7 @@ struct Vertex{
         return attributeDescriptions;
     }
 };
+
 
 // const std::vector<Vertex> vertices = {
 //     { {  0.0f, -0.5f }, { 1.0f, 0.0f, 0.0f } },
@@ -126,6 +128,11 @@ private:
         std::vector<vk::SurfaceFormatKHR> formats;
         std::vector<vk::PresentModeKHR> presentModes;
     };
+    struct UniformBufferObject {
+        glm::mat4 model;
+        glm::mat4 view;
+        glm::mat4 proj;  
+    };
 
     vk::DebugUtilsMessengerEXT m_DebugMessenger;
 
@@ -144,6 +151,7 @@ private:
     vk::Format m_SwapChainImageFormat;
     vk::Extent2D m_SwapChainExtent;
     vk::RenderPass m_RenderPass;
+    vk::DescriptorSetLayout m_DescriptorSetLayout;
     vk::PipelineLayout m_PipelineLayout;
 
     vk::Pipeline m_GraphicsPipeline;
@@ -161,6 +169,9 @@ private:
     vk::DeviceMemory m_VertexBufferMemory;
     vk::Buffer m_IndexBuffer;
     vk::DeviceMemory m_IndexBufferMemory;
+
+    std::vector<vk::Buffer> m_vecUniformBuffers;
+    std::vector<vk::DeviceMemory> m_vecUniformBuffersMemory;
 
 public:
     void run();
@@ -200,7 +211,8 @@ private:
     void createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage,
                     vk::MemoryPropertyFlags properties, vk::Buffer& buffer, vk::DeviceMemory& bufferMemory);
     void copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size);
-    
+    void updateUniformBuffer(uint32_t currentImage);
+
     void createInstance();
     void setupDebugMessenger();
     void createSurface();
@@ -209,11 +221,13 @@ private:
     void createSwapChain();
     void createImageViews();
     void createRenderPass();
+    void createDescriptorSetLayout();
     void createGraphicsPipeline();
     void createFramebuffers();
     void createCommandPool();
     void createVertexBuffer();
     void createIndexBuffer();
+    void createUniformBuffers();
     void createCommandBuffers();
     void createSyncObjects();
 
