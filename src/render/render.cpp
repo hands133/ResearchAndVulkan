@@ -63,6 +63,8 @@ void HelloTriangleApplication::initVulkan() {
     createVertexBuffer();
     createIndexBuffer();
     createUniformBuffers();
+    createDescriptorPool();
+    createDescriptorSets();
     createCommandBuffers();
     createSyncObjects();
 }
@@ -79,6 +81,13 @@ void HelloTriangleApplication::mainLoop() {
 void HelloTriangleApplication::cleanUp() {
     cleanupSwapChain();
 
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+    {
+        m_Device.destroyBuffer(m_vecUniformBuffers[i]);
+        m_Device.freeMemory(m_vecUniformBuffersMemory[i]);
+    }
+
+    m_Device.destroyDescriptorPool(m_DescriptorPool);
     m_Device.destroyDescriptorSetLayout(m_DescriptorSetLayout);
 
     m_Device.destroyBuffer(m_IndexBuffer);
@@ -356,11 +365,12 @@ void HelloTriangleApplication::createDescriptorSetLayout()
     uboLayoutBinding.setBinding(0)
         .setDescriptorType(vk::DescriptorType::eUniformBuffer)
         .setDescriptorCount(1)
-        .setStageFlags(vk::ShaderStageFlagBits::eVertex)
-        .setPImmutableSamplers(nullptr);    // Optional
+        .setStageFlags(vk::ShaderStageFlagBits::eVertex);
+        // .setPImmutableSamplers(nullptr);    // Optional
 
     vk::DescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.setBindings(uboLayoutBinding);
+    
     m_DescriptorSetLayout = m_Device.createDescriptorSetLayout(layoutInfo);
     if (!m_DescriptorSetLayout)
         throw std::runtime_error("failed to create descriptor set layout!");
@@ -420,7 +430,8 @@ void HelloTriangleApplication::createGraphicsPipeline()
         .setPolygonMode(vk::PolygonMode::eFill)
         .setLineWidth(1.0f)
         .setCullMode(vk::CullModeFlagBits::eBack)
-        .setFrontFace(vk::FrontFace::eClockwise)
+        .setFrontFace(vk::FrontFace::eCounterClockwise)
+        // .setFrontFace(vk::FrontFace::eClockwise)
         .setDepthBiasEnable(false)
         .setDepthBiasConstantFactor(0.0f)   // Optional
         .setDepthBiasClamp(0.0f)            // Optional
@@ -462,9 +473,8 @@ void HelloTriangleApplication::createGraphicsPipeline()
     dynamicState.setDynamicStates(dynamicStates);
 
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo{};
-    pipelineLayoutInfo.setSetLayouts({})    // Optional
-        .setPushConstantRanges({}); // Optional
-    pipelineLayoutInfo.setSetLayouts(m_DescriptorSetLayout);
+    pipelineLayoutInfo.setSetLayouts(m_DescriptorSetLayout)    // Optional
+        .setPushConstantRanges({});     // Optional
     
     m_PipelineLayout = m_Device.createPipelineLayout(pipelineLayoutInfo);
     if (!m_PipelineLayout)  throw std::runtime_error("failed to create pipeline layout!");
@@ -598,6 +608,49 @@ void HelloTriangleApplication::createUniformBuffers()
             m_vecUniformBuffersMemory[i]);
 }
 
+void HelloTriangleApplication::createDescriptorPool()
+{
+    vk::DescriptorPoolSize poolSize{};
+    poolSize.setDescriptorCount(static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT))
+        .setType(vk::DescriptorType::eUniformBuffer);
+
+    vk::DescriptorPoolCreateInfo poolInfo{};
+    poolInfo.setPoolSizes(poolSize)
+        .setMaxSets(static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT));
+
+    m_DescriptorPool = m_Device.createDescriptorPool(poolInfo);
+    if (!m_DescriptorPool)  throw std::runtime_error("failed to create descriptor pool!");
+}
+
+void HelloTriangleApplication::createDescriptorSets()
+{
+    std::vector<vk::DescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, m_DescriptorSetLayout);
+    vk::DescriptorSetAllocateInfo allocInfo{};
+    allocInfo.setDescriptorPool(m_DescriptorPool)
+        .setDescriptorSetCount(static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT))
+        .setSetLayouts(layouts);
+
+    m_vecDescriptorSets = m_Device.allocateDescriptorSets(allocInfo);
+
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+    {
+        vk::DescriptorBufferInfo bufferInfo{};
+        bufferInfo.setBuffer(m_vecUniformBuffers[i])
+            .setOffset(0)
+            .setRange(sizeof(UniformBufferObject));
+
+        vk::WriteDescriptorSet descriptorWrite{};
+        descriptorWrite.setDstSet(m_vecDescriptorSets[i])
+            .setDstBinding(0)
+            .setDstArrayElement(0)
+            .setDescriptorType(vk::DescriptorType::eUniformBuffer)
+            .setDescriptorCount(1)
+            .setBufferInfo(bufferInfo);
+
+        m_Device.updateDescriptorSets(descriptorWrite, nullptr);
+    }
+}
+
 void HelloTriangleApplication::createCommandBuffers()
 {
     vk::CommandBufferAllocateInfo allocInfo{};
@@ -645,6 +698,9 @@ void HelloTriangleApplication::recreateSwapChain()
     createGraphicsPipeline();
     createFramebuffers();
     createUniformBuffers();
+
+    // createDescriptorPool();
+    // createDescriptorSets();
 }
 
 void HelloTriangleApplication::cleanupSwapChain()
@@ -815,6 +871,7 @@ void HelloTriangleApplication::recordCommandBuffer(vk::CommandBuffer commandBuff
     commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
     commandBuffer.bindIndexBuffer(m_IndexBuffer, 0, vk::IndexType::eUint16);
     
+    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_PipelineLayout, 0, m_vecDescriptorSets[imageIndex], nullptr);
     commandBuffer.drawIndexed(indices.size(), 1, 0, 0, 0);
 
     commandBuffer.endRenderPass();
@@ -904,7 +961,7 @@ void HelloTriangleApplication::updateUniformBuffer(uint32_t currentImage)
 
     void* data;
     const auto&_ = m_Device.mapMemory(m_vecUniformBuffersMemory[currentImage], 0, sizeof(ubo), vk::MemoryMapFlags{0}, &data);
-    memcpy(data, &ubo, sizeof(ubo));
+    memcpy(data, &ubo, sizeof(UniformBufferObject));
     m_Device.unmapMemory(m_vecUniformBuffersMemory[currentImage]);
 }
 
@@ -958,12 +1015,12 @@ void HelloTriangleApplication::drawFrame()
     // only reset the fence if we are submitting work
     uint32_t imageIndex = value.value;
 
+    updateUniformBuffer(m_CurrentFrame);
+
     m_Device.resetFences(m_vecInFlightFences[m_CurrentFrame]);
 
     m_vecCommandBuffers[m_CurrentFrame].reset(vk::CommandBufferResetFlags{0});
     recordCommandBuffer(m_vecCommandBuffers[m_CurrentFrame], imageIndex);
-
-    updateUniformBuffer(imageIndex);
 
     vk::SubmitInfo submitInfo{};
     vk::Semaphore waitSemaphores[] = { m_vecImageAvailableSemaphores[m_CurrentFrame] };
@@ -994,7 +1051,6 @@ void HelloTriangleApplication::drawFrame()
     {
         result = vk::Result::eErrorOutOfDateKHR;
     }
-    // auto result = m_PresentQueue.presentKHR(presentInfo);
     if (result == vk::Result::eSuboptimalKHR || result == vk::Result::eErrorOutOfDateKHR)
     {
         m_FramebufferResized = false;

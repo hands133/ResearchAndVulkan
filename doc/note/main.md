@@ -25,3 +25,4 @@
 21. 暂存缓冲区：`chapters/StagingBuffer.md`
 22. 索引缓冲区：`chapters/IndexBuffer.md`
 23. 描述符布局和缓冲区：`chapters/DescriptorLayoutAndBuffer.md`
+24. 描述池和集合：`chapters/DescriptorPoolAndSets.md`

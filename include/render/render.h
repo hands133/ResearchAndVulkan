@@ -173,6 +173,10 @@ private:
     std::vector<vk::Buffer> m_vecUniformBuffers;
     std::vector<vk::DeviceMemory> m_vecUniformBuffersMemory;
 
+    vk::DescriptorPool m_DescriptorPool;
+    // VkDescriptorPool m_DescriptorPool;
+    std::vector<vk::DescriptorSet> m_vecDescriptorSets;
+
 public:
     void run();
 
@@ -228,12 +232,13 @@ private:
     void createVertexBuffer();
     void createIndexBuffer();
     void createUniformBuffers();
+    void createDescriptorPool();
+    void createDescriptorSets();
     void createCommandBuffers();
     void createSyncObjects();
 
     void recreateSwapChain();
     void cleanupSwapChain();
-
 
     // render functions
     void drawFrame();
