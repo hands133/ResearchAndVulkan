@@ -697,14 +697,12 @@ void HelloTriangleApplication::recreateSwapChain()
     createRenderPass();
     createGraphicsPipeline();
     createFramebuffers();
-    createUniformBuffers();
-
-    // createDescriptorPool();
-    // createDescriptorSets();
+    // createUniformBuffers();
 }
 
 void HelloTriangleApplication::cleanupSwapChain()
 {
+
     for (auto& framebuffer : m_vecSwapchainFramebuffers)
         m_Device.destroyFramebuffer(framebuffer);
 

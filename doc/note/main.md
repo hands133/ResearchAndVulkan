@@ -26,3 +26,4 @@
 22. 索引缓冲区：`chapters/IndexBuffer.md`
 23. 描述符布局和缓冲区：`chapters/DescriptorLayoutAndBuffer.md`
 24. 描述池和集合：`chapters/DescriptorPoolAndSets.md`
+25. 图像：`chapters/Images.md`
