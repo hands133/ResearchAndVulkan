@@ -13,7 +13,6 @@ file(GLOB_RECURSE LearnVK_Headers "include/**.h")
 file(GLOB_RECURSE LearnVK_Sources "src/**.cpp")
 
 add_executable(${PROJECT_NAME} ${LearnVK_Headers} ${LearnVK_Sources} ./main.cpp)
-# add_executable(${PROJECT_NAME} ./CAPI.cpp)
 
 target_link_libraries(${PROJECT_NAME}
     PUBLIC glfw
