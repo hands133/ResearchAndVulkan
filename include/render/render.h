@@ -174,8 +174,10 @@ private:
     std::vector<vk::DeviceMemory> m_vecUniformBuffersMemory;
 
     vk::DescriptorPool m_DescriptorPool;
-    // VkDescriptorPool m_DescriptorPool;
     std::vector<vk::DescriptorSet> m_vecDescriptorSets;
+
+    vk::Image m_TextureImage;
+    vk::DeviceMemory m_TextureImageMemory;
 
 public:
     void run();
@@ -217,6 +219,18 @@ private:
     void copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size);
     void updateUniformBuffer(uint32_t currentImage);
 
+    void createImage(uint32_t width, uint32_t height, vk::Format format,
+        vk::ImageTiling tiling, vk::ImageUsageFlags usage,
+        vk::MemoryPropertyFlags properties, 
+        vk::Image& image, vk::DeviceMemory& memory);
+
+    vk::CommandBuffer beginSingleTimeCommands();
+    void endSingleTimeCommands(vk::CommandBuffer commandBuffer);
+    void transitionImageLayout(vk::Image image, vk::Format format,
+        vk::ImageLayout oldLayout, vk::ImageLayout newLayout);
+    
+    void copyBufferToImage(vk::Buffer buffer, vk::Image image, uint32_t width, uint32_t height);
+
     void createInstance();
     void setupDebugMessenger();
     void createSurface();
@@ -229,6 +243,7 @@ private:
     void createGraphicsPipeline();
     void createFramebuffers();
     void createCommandPool();
+    void createTextureImage();
     void createVertexBuffer();
     void createIndexBuffer();
     void createUniformBuffers();

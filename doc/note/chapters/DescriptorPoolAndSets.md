@@ -276,3 +276,13 @@ layout(set = 0, binding = 0) uniform UniformBufferObject { ... }
 ```
 
 可以使用此特性将每个对象不同的描述符和共享的描述符放入单独的描述符集。在这种情况下，您可以避免在 `draw` 调用之间重新绑定大多数描述符，这可能更有效。
+
+> 整理一下找到的bug：
+> 1. 为啥没看见这个 `setType` 呢？我还以为是 C 编程风格的结构体的 stype：
+>   ```cpp
+>   vk::DescriptorPoolSize poolSize{};
+>   poolSize.setDescriptorCount(static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT))
+>       .setType(vk::DescriptorType::eUniformBuffer);
+>   ```
+> 2. 窗口缩放不需要重新创建 `uniformbuffers`，把 `recreateSwapchain` 里头的调用删除。
+
