@@ -179,6 +179,9 @@ private:
     vk::Image m_TextureImage;
     vk::DeviceMemory m_TextureImageMemory;
 
+    vk::ImageView m_TextureImageView;
+    vk::Sampler m_TextureSampler;
+
 public:
     void run();
 
@@ -231,6 +234,8 @@ private:
     
     void copyBufferToImage(vk::Buffer buffer, vk::Image image, uint32_t width, uint32_t height);
 
+    vk::ImageView createImageView(vk::Image image, vk::Format format);
+    
     void createInstance();
     void setupDebugMessenger();
     void createSurface();
@@ -244,6 +249,8 @@ private:
     void createFramebuffers();
     void createCommandPool();
     void createTextureImage();
+    void createTextureImageView();
+    void createTextureSampler();
     void createVertexBuffer();
     void createIndexBuffer();
     void createUniformBuffers();

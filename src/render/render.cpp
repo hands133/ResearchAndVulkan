@@ -64,6 +64,8 @@ void HelloTriangleApplication::initVulkan() {
     createFramebuffers();
     createCommandPool();
     createTextureImage();
+    createTextureImageView();
+    createTextureSampler();
     createVertexBuffer();
     createIndexBuffer();
     createUniformBuffers();
@@ -84,6 +86,9 @@ void HelloTriangleApplication::mainLoop() {
 
 void HelloTriangleApplication::cleanUp() {
     cleanupSwapChain();
+
+    m_Device.destroySampler(m_TextureSampler);
+    m_Device.destroyImageView(m_TextureImageView);
 
     m_Device.destroyImage(m_TextureImage);
     m_Device.freeMemory(m_TextureImageMemory);
@@ -239,6 +244,7 @@ void HelloTriangleApplication::createLogicalDevice()
     }
 
     vk::PhysicalDeviceFeatures deviceFeatures{};
+    deviceFeatures.setSamplerAnisotropy(true);
 
     vk::DeviceCreateInfo createInfo{};
     createInfo.setQueueCreateInfos(queueCreateInfos)
@@ -307,25 +313,7 @@ void HelloTriangleApplication::createImageViews()
     m_vecSwapChainImageViews.clear();
     for (const auto& image : m_vecSwapChainImages)
     {
-        vk::ImageViewCreateInfo createInfo;
-        createInfo.setImage(image)
-        .setViewType(vk::ImageViewType::e2D)
-        .setFormat(m_SwapChainImageFormat)
-        .setComponents(vk::ComponentMapping(
-            vk::ComponentSwizzle::eIdentity,
-            vk::ComponentSwizzle::eIdentity,
-            vk::ComponentSwizzle::eIdentity,
-            vk::ComponentSwizzle::eIdentity))
-        .setSubresourceRange(vk::ImageSubresourceRange(
-            vk::ImageAspectFlagBits::eColor,
-            0,
-            1,
-            0,
-            1));
-        
-
-        auto& view = m_vecSwapChainImageViews.emplace_back(m_Device.createImageView(createInfo));
-        if (!view)  throw std::runtime_error("failed to create image views!");
+        m_vecSwapChainImageViews.emplace_back(createImageView(image, m_SwapChainImageFormat));
     }
 }
 
@@ -581,6 +569,37 @@ void HelloTriangleApplication::createTextureImage()
     m_Device.freeMemory(stagingBufferMemory);
 }
 
+void HelloTriangleApplication::createTextureImageView()
+{
+    m_TextureImageView = createImageView(m_TextureImage, vk::Format::eR8G8B8A8Srgb);
+}
+
+void HelloTriangleApplication::createTextureSampler()
+{
+    vk::SamplerCreateInfo samplerInfo{};
+    samplerInfo.setMagFilter(vk::Filter::eLinear)
+        .setMinFilter(vk::Filter::eLinear)
+        .setAddressModeU(vk::SamplerAddressMode::eRepeat)
+        .setAddressModeV(vk::SamplerAddressMode::eRepeat)
+        .setAddressModeW(vk::SamplerAddressMode::eRepeat);
+    
+    vk::PhysicalDeviceProperties properties = m_PhysicalDevice.getProperties();
+
+    samplerInfo.setAnisotropyEnable(true)
+        .setMaxAnisotropy(properties.limits.maxSamplerAnisotropy)
+        .setBorderColor(vk::BorderColor::eIntOpaqueWhite)
+        .setUnnormalizedCoordinates(false)
+        .setCompareEnable(false)
+        .setCompareOp(vk::CompareOp::eAlways)
+        .setMipmapMode(vk::SamplerMipmapMode::eLinear)
+        .setMipLodBias(0.0f)
+        .setMinLod(0.0f)
+        .setMaxLod(0.0f);
+
+    m_TextureSampler = m_Device.createSampler(samplerInfo);
+    if (!m_TextureSampler)  throw std::runtime_error("failed to create texture sampler!");    
+}
+
 void HelloTriangleApplication::createVertexBuffer()
 {
     vk::DeviceSize bufferSize = sizeof(Vertex) * vertices.size();
@@ -772,7 +791,9 @@ bool HelloTriangleApplication::isDeviceSuitable(vk::PhysicalDevice device) {
         swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
     }
 
-    return indices.isComplete() && extensionsSupported && swapChainAdequate;
+    vk::PhysicalDeviceFeatures supportedFeatures = device.getFeatures();
+
+    return indices.isComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
 }
 
 bool HelloTriangleApplication::checkDeviceExtensionSupport(vk::PhysicalDevice device)
@@ -1119,6 +1140,22 @@ void HelloTriangleApplication::copyBufferToImage(vk::Buffer buffer, vk::Image im
     commandBuffer.copyBufferToImage(buffer, image, vk::ImageLayout::eTransferDstOptimal, region);
 
     endSingleTimeCommands(commandBuffer);
+}
+
+vk::ImageView HelloTriangleApplication::createImageView(vk::Image image, vk::Format format)
+{
+    vk::ImageViewCreateInfo viewInfo{};
+    viewInfo.setImage(image)
+        .setViewType(vk::ImageViewType::e2D)
+        .setFormat(format)
+        .setSubresourceRange(vk::ImageSubresourceRange(
+            vk::ImageAspectFlagBits::eColor,
+            0, 1, 0, 1));
+        
+    vk::ImageView imageView = m_Device.createImageView(viewInfo);
+    if (!imageView) throw std::runtime_error("failed to create texture image view!");
+
+    return imageView;
 }
 
 void HelloTriangleApplication::createInstance() {
