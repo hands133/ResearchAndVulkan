@@ -28,3 +28,4 @@
 24. 描述池和集合：`chapters/DescriptorPoolAndSets.md`
 25. 图像：`chapters/Images.md`
 26. 图像访问和采样：`chapters/ImageViewAndSampler.md`
+27. 组合图像采样器：`chapters/CombinedImageSampler.md`

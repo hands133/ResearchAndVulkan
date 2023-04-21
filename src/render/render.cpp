@@ -5,6 +5,7 @@
 #include "glm/fwd.hpp"
 #include "glm/trigonometric.hpp"
 #include <X11/Xlib.h>
+#include <array>
 #include <cstdint>
 #include <cstring>
 #include <exception>
@@ -363,8 +364,18 @@ void HelloTriangleApplication::createDescriptorSetLayout()
         .setStageFlags(vk::ShaderStageFlagBits::eVertex);
         // .setPImmutableSamplers(nullptr);    // Optional
 
+    vk::DescriptorSetLayoutBinding samplerLayoutBinding{};
+    samplerLayoutBinding.setBinding(1)
+        .setDescriptorCount(1)
+        .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
+        .setStageFlags(vk::ShaderStageFlagBits::eFragment)
+        .setPImmutableSamplers(nullptr);
+
+    std::array<vk::DescriptorSetLayoutBinding, 2> bindings = 
+    {   uboLayoutBinding, samplerLayoutBinding };
+
     vk::DescriptorSetLayoutCreateInfo layoutInfo{};
-    layoutInfo.setBindings(uboLayoutBinding);
+    layoutInfo.setBindings(bindings);
     
     m_DescriptorSetLayout = m_Device.createDescriptorSetLayout(layoutInfo);
     if (!m_DescriptorSetLayout)
@@ -675,13 +686,15 @@ void HelloTriangleApplication::createUniformBuffers()
 
 void HelloTriangleApplication::createDescriptorPool()
 {
-    vk::DescriptorPoolSize poolSize{};
-    poolSize.setDescriptorCount(static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT))
-        .setType(vk::DescriptorType::eUniformBuffer);
-    
+    std::array<vk::DescriptorPoolSize, 2> poolSizes{};
+    poolSizes[0].setType(vk::DescriptorType::eUniformBuffer)
+        .setDescriptorCount(MAX_FRAMES_IN_FLIGHT);
+    poolSizes[1].setType(vk::DescriptorType::eCombinedImageSampler)
+        .setDescriptorCount(MAX_FRAMES_IN_FLIGHT);
+
     vk::DescriptorPoolCreateInfo poolInfo{};
-    poolInfo.setPoolSizes(poolSize)
-        .setMaxSets(static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT));
+    poolInfo.setPoolSizes(poolSizes)
+        .setMaxSets(MAX_FRAMES_IN_FLIGHT);
 
     m_DescriptorPool = m_Device.createDescriptorPool(poolInfo);
     if (!m_DescriptorPool)  throw std::runtime_error("failed to create descriptor pool!");
@@ -704,15 +717,27 @@ void HelloTriangleApplication::createDescriptorSets()
             .setOffset(0)
             .setRange(sizeof(UniformBufferObject));
 
-        vk::WriteDescriptorSet descriptorWrite{};
-        descriptorWrite.setDstSet(m_vecDescriptorSets[i])
+        vk::DescriptorImageInfo imageInfo{};
+        imageInfo.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
+            .setImageView(m_TextureImageView)
+            .setSampler(m_TextureSampler);
+
+        std::array<vk::WriteDescriptorSet, 2> descriptorWrites{};
+        descriptorWrites[0].setDstSet(m_vecDescriptorSets[i])
             .setDstBinding(0)
             .setDstArrayElement(0)
             .setDescriptorType(vk::DescriptorType::eUniformBuffer)
             .setDescriptorCount(1)
             .setBufferInfo(bufferInfo);
+        
+        descriptorWrites[1].setDstSet(m_vecDescriptorSets[i])
+            .setDstBinding(1)
+            .setDstArrayElement(0)
+            .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
+            .setDescriptorCount(1)
+            .setImageInfo(imageInfo);
 
-        m_Device.updateDescriptorSets(descriptorWrite, nullptr);
+        m_Device.updateDescriptorSets(descriptorWrites, nullptr);
     }
 }
 
@@ -724,7 +749,6 @@ void HelloTriangleApplication::createCommandBuffers()
         .setCommandBufferCount(MAX_FRAMES_IN_FLIGHT);
     m_vecCommandBuffers = m_Device.allocateCommandBuffers(allocInfo);
 }
-
 
 void HelloTriangleApplication::createSyncObjects()
 {

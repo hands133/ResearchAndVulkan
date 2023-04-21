@@ -22,6 +22,7 @@
 struct Vertex{
     glm::vec2 pos;
     glm::vec3 color;
+    glm::vec2 texCoord;
 
     static vk::VertexInputBindingDescription getBindingDescription() {
         vk::VertexInputBindingDescription bindingDescription{};
@@ -33,8 +34,8 @@ struct Vertex{
         return bindingDescription;
     }
 
-    static std::array<vk::VertexInputAttributeDescription, 2> getAttributeDescriptions() {
-        std::array<vk::VertexInputAttributeDescription, 2> attributeDescriptions{};
+    static std::array<vk::VertexInputAttributeDescription, 3> getAttributeDescriptions() {
+        std::array<vk::VertexInputAttributeDescription, 3> attributeDescriptions{};
 
         attributeDescriptions[0].setBinding(0)
             .setLocation(0)
@@ -45,28 +46,21 @@ struct Vertex{
             .setLocation(1)
             .setFormat(vk::Format::eR32G32B32Sfloat)
             .setOffset(offsetof(Vertex, color));
+
+        attributeDescriptions[2].setBinding(0)
+            .setLocation(2)
+            .setFormat(vk::Format::eR32G32Sfloat)
+            .setOffset(offsetof(Vertex, texCoord));
+
         return attributeDescriptions;
     }
 };
 
-
-// const std::vector<Vertex> vertices = {
-//     { {  0.0f, -0.5f }, { 1.0f, 0.0f, 0.0f } },
-//     { {  0.5f,  0.5f }, { 0.0f, 1.0f, 0.0f } },
-//     { { -0.5f,  0.5f }, { 0.0f, 0.0f, 1.0f } }
-// };
-
-// const std::vector<Vertex> vertices = {
-//     { {  0.0f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
-//     { {  0.5f,  0.5f }, { 0.0f, 1.0f, 0.0f } },
-//     { { -0.5f,  0.5f }, { 0.0f, 0.0f, 1.0f } }
-// };
-
 const std::vector<Vertex> vertices = {
-    { { -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f } },
-    { {  0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f } },
-    { {  0.5f,  0.5f }, { 0.0f, 0.0f, 1.0f } },
-    { { -0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } }
+    { { -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } },
+    { {  0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f } },
+    { {  0.5f,  0.5f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f } },
+    { { -0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f } }
 };
 
 const std::vector<uint16_t> indices = {
