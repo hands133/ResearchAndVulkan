@@ -29,3 +29,5 @@
 25. 图像：`chapters/Images.md`
 26. 图像访问和采样：`chapters/ImageViewAndSampler.md`
 27. 组合图像采样器：`chapters/CombinedImageSampler.md`
+28. 深度缓冲：`chapters/DepthBuffering.md`
+29. 加载模型：`chapters/LoadingModels.md`

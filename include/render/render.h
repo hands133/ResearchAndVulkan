@@ -20,7 +20,7 @@
 #include <stdexcept>
 
 struct Vertex{
-    glm::vec2 pos;
+    glm::vec3 pos;
     glm::vec3 color;
     glm::vec2 texCoord;
 
@@ -39,7 +39,7 @@ struct Vertex{
 
         attributeDescriptions[0].setBinding(0)
             .setLocation(0)
-            .setFormat(vk::Format::eR32G32Sfloat)
+            .setFormat(vk::Format::eR32G32B32Sfloat)
             .setOffset(offsetof(Vertex, pos));
         
         attributeDescriptions[1].setBinding(0)
@@ -57,15 +57,23 @@ struct Vertex{
 };
 
 const std::vector<Vertex> vertices = {
-    { { -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } },
-    { {  0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f } },
-    { {  0.5f,  0.5f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f } },
-    { { -0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f } }
+    { { -0.5f, -0.5f,  0.0f }, { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } },
+    { {  0.5f, -0.5f,  0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f } },
+    { {  0.5f,  0.5f,  0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f } },
+    { { -0.5f,  0.5f,  0.0f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f } },
+    
+    { { -0.5f, -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } },
+    { {  0.5f, -0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f } },
+    { {  0.5f,  0.5f, -0.5f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f } },
+    { { -0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f } }
 };
 
 const std::vector<uint16_t> indices = {
     0, 1, 2,
-    2, 3, 0
+    2, 3, 0,
+
+    4, 5, 6,
+    6, 7, 4
 };
 
 static std::vector<char> readFile(const std::string& filename) {
@@ -172,9 +180,12 @@ private:
 
     vk::Image m_TextureImage;
     vk::DeviceMemory m_TextureImageMemory;
-
     vk::ImageView m_TextureImageView;
     vk::Sampler m_TextureSampler;
+
+    vk::Image m_DepthImage;
+    vk::DeviceMemory m_DepthImageMemory;
+    vk::ImageView m_DepthImageView;
 
 public:
     void run();
@@ -228,8 +239,12 @@ private:
     
     void copyBufferToImage(vk::Buffer buffer, vk::Image image, uint32_t width, uint32_t height);
 
-    vk::ImageView createImageView(vk::Image image, vk::Format format);
+    vk::ImageView createImageView(vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags);
     
+    vk::Format findSupportedFormat(const std::vector<vk::Format>& candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features);
+    vk::Format findDepthFormat();
+    bool hasStencilComponent(vk::Format format);
+
     void createInstance();
     void setupDebugMessenger();
     void createSurface();
@@ -242,6 +257,7 @@ private:
     void createGraphicsPipeline();
     void createFramebuffers();
     void createCommandPool();
+    void createDepthResources();
     void createTextureImage();
     void createTextureImageView();
     void createTextureSampler();
