@@ -2,6 +2,7 @@
 
 #include "glm/fwd.hpp"
 #include <cstddef>
+#include <functional>
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_core.h>
 #include <vulkan/vulkan_enums.hpp>
@@ -18,6 +19,9 @@
 #include <fstream>
 #include <cstdint>
 #include <stdexcept>
+
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/hash.hpp>
 
 struct Vertex{
     glm::vec3 pos;
@@ -54,27 +58,41 @@ struct Vertex{
 
         return attributeDescriptions;
     }
+
+    bool operator==(const Vertex& other) const {
+        return pos == other.pos && color == other.color && texCoord == other.texCoord;
+    }
 };
 
-const std::vector<Vertex> vertices = {
-    { { -0.5f, -0.5f,  0.0f }, { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } },
-    { {  0.5f, -0.5f,  0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f } },
-    { {  0.5f,  0.5f,  0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f } },
-    { { -0.5f,  0.5f,  0.0f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f } },
+namespace std{
+    template<> struct hash<Vertex> {
+        size_t operator()(const Vertex& vertex) const {
+            return ((hash<glm::vec3>()(vertex.pos) ^
+                    (hash<glm::vec3>()(vertex.color) << 1) >> 1) ^
+                    (hash<glm::vec2>()(vertex.texCoord) << 1));
+        }
+    };
+}
+
+// const std::vector<Vertex> vertices = {
+//     { { -0.5f, -0.5f,  0.0f }, { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } },
+//     { {  0.5f, -0.5f,  0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f } },
+//     { {  0.5f,  0.5f,  0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f } },
+//     { { -0.5f,  0.5f,  0.0f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f } },
     
-    { { -0.5f, -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } },
-    { {  0.5f, -0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f } },
-    { {  0.5f,  0.5f, -0.5f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f } },
-    { { -0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f } }
-};
+//     { { -0.5f, -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } },
+//     { {  0.5f, -0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f } },
+//     { {  0.5f,  0.5f, -0.5f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f } },
+//     { { -0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f } }
+// };
 
-const std::vector<uint16_t> indices = {
-    0, 1, 2,
-    2, 3, 0,
+// const std::vector<uint16_t> indices = {
+//     0, 1, 2,
+//     2, 3, 0,
 
-    4, 5, 6,
-    6, 7, 4
-};
+//     4, 5, 6,
+//     6, 7, 4
+// };
 
 static std::vector<char> readFile(const std::string& filename) {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
@@ -102,6 +120,10 @@ private:
     GLFWwindow *m_pWindow{ nullptr };
     const uint32_t m_Width = 600;
     const uint32_t m_Height = 400;
+
+    const std::string MODEL_PATH = "./src/models/viking_room/viking_room.obj";
+    const std::string TEXTURE_PATH = "./src/models/viking_room/viking_room.png";
+
     // vulkan members
     const std::vector<const char *> m_vecValidationLayers = {
         "VK_LAYER_KHRONOS_validation"
@@ -167,6 +189,8 @@ private:
     std::vector<vk::Semaphore> m_vecRenderFinishedSemaphores;
     std::vector<vk::Fence> m_vecInFlightFences;
 
+    std::vector<Vertex> m_Vertices;
+    std::vector<uint32_t> m_Indices;
     vk::Buffer m_VertexBuffer;
     vk::DeviceMemory m_VertexBufferMemory;
     vk::Buffer m_IndexBuffer;
@@ -245,6 +269,7 @@ private:
     vk::Format findDepthFormat();
     bool hasStencilComponent(vk::Format format);
 
+
     void createInstance();
     void setupDebugMessenger();
     void createSurface();
@@ -261,6 +286,7 @@ private:
     void createTextureImage();
     void createTextureImageView();
     void createTextureSampler();
+    void loadModel();
     void createVertexBuffer();
     void createIndexBuffer();
     void createUniformBuffers();

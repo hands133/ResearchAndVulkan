@@ -13,6 +13,7 @@
 #include <stdexcept>
 #include <limits>
 #include <algorithm>
+#include <unordered_map>
 #include <map>
 #include <set>
 #include <vulkan/vulkan.hpp>
@@ -29,6 +30,8 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <utils/stb_image.h>
+
+#include <utils/tiny_obj_loader.h>
 
 void HelloTriangleApplication::run() {
     initWindow();
@@ -70,6 +73,7 @@ void HelloTriangleApplication::initVulkan() {
     createTextureImage();
     createTextureImageView();
     createTextureSampler();
+    loadModel();
     createVertexBuffer();
     createIndexBuffer();
     createUniformBuffers();
@@ -454,8 +458,9 @@ void HelloTriangleApplication::createGraphicsPipeline()
         .setRasterizerDiscardEnable(false)
         .setPolygonMode(vk::PolygonMode::eFill)
         .setLineWidth(1.0f)
-        .setCullMode(vk::CullModeFlagBits::eBack)
-        .setFrontFace(vk::FrontFace::eCounterClockwise)
+        .setCullMode(vk::CullModeFlagBits::eNone)
+        // .setCullMode(vk::CullModeFlagBits::eBack)
+        // .setFrontFace(vk::FrontFace::eCounterClockwise)
         // .setFrontFace(vk::FrontFace::eClockwise)
         .setDepthBiasEnable(false)
         .setDepthBiasConstantFactor(0.0f)   // Optional
@@ -588,7 +593,8 @@ void HelloTriangleApplication::createDepthResources()
 void HelloTriangleApplication::createTextureImage()
 {
     int texWidth, texHeight, texChannels;
-    stbi_uc* pixels = stbi_load("./src/texture/redPattern.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    // stbi_uc* pixels = stbi_load("./src/texture/redPattern.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    stbi_uc* pixels = stbi_load(TEXTURE_PATH.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     vk::DeviceSize imageSize = texWidth * texHeight * 4;
 
     if (!pixels)
@@ -655,9 +661,49 @@ void HelloTriangleApplication::createTextureSampler()
     if (!m_TextureSampler)  throw std::runtime_error("failed to create texture sampler!");    
 }
 
+void HelloTriangleApplication::loadModel()
+{
+    tinyobj::attrib_t attrib;
+    std::vector<tinyobj::shape_t> shapes;
+    std::vector<tinyobj::material_t> materials;
+    std::string warn, err;
+
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, MODEL_PATH.c_str()))
+        throw std::runtime_error(warn + err);
+
+    std::unordered_map<Vertex, uint32_t> uniqueVertices{};
+
+    for(const auto& shape : shapes)
+    {
+        for(const auto& index : shape.mesh.indices) {
+            Vertex vertex{};
+
+            vertex.pos = {
+                attrib.vertices[3 * index.vertex_index + 0],
+                attrib.vertices[3 * index.vertex_index + 1],
+                attrib.vertices[3 * index.vertex_index + 2]
+            };
+
+            vertex.texCoord = {
+                attrib.texcoords[2 * index.texcoord_index + 0],
+                1.0 - attrib.texcoords[2 * index.texcoord_index + 1]
+            };
+
+            vertex.color = { 1.0f, 1.0f, 1.0f };
+
+            if (uniqueVertices.count(vertex) == 0) {
+                uniqueVertices[vertex] = m_Vertices.size();
+                m_Vertices.emplace_back(vertex);
+            }
+
+            m_Indices.emplace_back(uniqueVertices[vertex]);
+        }
+    }
+}
+
 void HelloTriangleApplication::createVertexBuffer()
 {
-    vk::DeviceSize bufferSize = sizeof(Vertex) * vertices.size();
+    vk::DeviceSize bufferSize = sizeof(Vertex) * m_Vertices.size();
     
     vk::Buffer stagingBuffer;
     vk::DeviceMemory stagingBufferMemory;
@@ -668,7 +714,7 @@ void HelloTriangleApplication::createVertexBuffer()
     
     void* data;
     const auto&_ = m_Device.mapMemory(stagingBufferMemory, 0, bufferSize, vk::MemoryMapFlags{0}, &data);
-    memcpy(data, vertices.data(), bufferSize);
+    memcpy(data, m_Vertices.data(), bufferSize);
     m_Device.unmapMemory(stagingBufferMemory);
 
     createBuffer(bufferSize,
@@ -685,7 +731,7 @@ void HelloTriangleApplication::createVertexBuffer()
 
 void HelloTriangleApplication::createIndexBuffer()
 {
-    vk::DeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+    vk::DeviceSize bufferSize = sizeof(m_Indices[0]) * m_Indices.size();
 
     vk::Buffer stagingBuffer;
     vk::DeviceMemory stagingBufferMemory;
@@ -697,7 +743,7 @@ void HelloTriangleApplication::createIndexBuffer()
     
     void* data;
     const auto&_ = m_Device.mapMemory(stagingBufferMemory, 0, bufferSize, vk::MemoryMapFlags{0}, &data);
-    memcpy(data, indices.data(), bufferSize);
+    memcpy(data, m_Indices.data(), bufferSize);
     m_Device.unmapMemory(stagingBufferMemory);
 
     createBuffer(bufferSize, 
@@ -1007,10 +1053,10 @@ void HelloTriangleApplication::recordCommandBuffer(vk::CommandBuffer commandBuff
     vk::Buffer vertexBuffers[] = { m_VertexBuffer };
     vk::DeviceSize offsets[] = { 0 };
     commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offsets);
-    commandBuffer.bindIndexBuffer(m_IndexBuffer, 0, vk::IndexType::eUint16);
+    commandBuffer.bindIndexBuffer(m_IndexBuffer, 0, vk::IndexType::eUint32);
     
     commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_PipelineLayout, 0, m_vecDescriptorSets[imageIndex], nullptr);
-    commandBuffer.drawIndexed(indices.size(), 1, 0, 0, 0);
+    commandBuffer.drawIndexed(m_Indices.size(), 1, 0, 0, 0);
 
     commandBuffer.endRenderPass();
     commandBuffer.end();

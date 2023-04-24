@@ -10,7 +10,7 @@ add_subdirectory(vendor/glm)
 add_subdirectory(vendor/glfw)
 
 file(GLOB_RECURSE LearnVK_Headers "include/**.h")
-file(GLOB_RECURSE LearnVK_Sources "src/**.cpp")
+file(GLOB_RECURSE LearnVK_Sources "src/**.cpp" "include/**.cpp")
 
 add_executable(${PROJECT_NAME} ${LearnVK_Headers} ${LearnVK_Sources} ./main.cpp)
 
