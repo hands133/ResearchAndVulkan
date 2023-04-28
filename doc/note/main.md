@@ -31,3 +31,4 @@
 27. 组合图像采样器：`chapters/CombinedImageSampler.md`
 28. 深度缓冲：`chapters/DepthBuffering.md`
 29. 加载模型：`chapters/LoadingModels.md`
+30. 生成 Mipmaps：`chapters/GeneratingMipmaps.md`

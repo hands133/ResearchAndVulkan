@@ -74,26 +74,6 @@ namespace std{
     };
 }
 
-// const std::vector<Vertex> vertices = {
-//     { { -0.5f, -0.5f,  0.0f }, { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } },
-//     { {  0.5f, -0.5f,  0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f } },
-//     { {  0.5f,  0.5f,  0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f } },
-//     { { -0.5f,  0.5f,  0.0f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f } },
-    
-//     { { -0.5f, -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } },
-//     { {  0.5f, -0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f } },
-//     { {  0.5f,  0.5f, -0.5f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f } },
-//     { { -0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f } }
-// };
-
-// const std::vector<uint16_t> indices = {
-//     0, 1, 2,
-//     2, 3, 0,
-
-//     4, 5, 6,
-//     6, 7, 4
-// };
-
 static std::vector<char> readFile(const std::string& filename) {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
@@ -202,6 +182,7 @@ private:
     vk::DescriptorPool m_DescriptorPool;
     std::vector<vk::DescriptorSet> m_vecDescriptorSets;
 
+    uint32_t m_MipLevels;
     vk::Image m_TextureImage;
     vk::DeviceMemory m_TextureImageMemory;
     vk::ImageView m_TextureImageView;
@@ -251,24 +232,25 @@ private:
     void copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size);
     void updateUniformBuffer(uint32_t currentImage);
 
-    void createImage(uint32_t width, uint32_t height, vk::Format format,
-        vk::ImageTiling tiling, vk::ImageUsageFlags usage,
+    void createImage(uint32_t width, uint32_t height, uint32_t mipLevels,
+        vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage,
         vk::MemoryPropertyFlags properties, 
         vk::Image& image, vk::DeviceMemory& memory);
 
     vk::CommandBuffer beginSingleTimeCommands();
     void endSingleTimeCommands(vk::CommandBuffer commandBuffer);
     void transitionImageLayout(vk::Image image, vk::Format format,
-        vk::ImageLayout oldLayout, vk::ImageLayout newLayout);
+        vk::ImageLayout oldLayout, vk::ImageLayout newLayout, uint32_t mipLevels);
     
     void copyBufferToImage(vk::Buffer buffer, vk::Image image, uint32_t width, uint32_t height);
 
-    vk::ImageView createImageView(vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags);
+    vk::ImageView createImageView(vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags, uint32_t mipLevels);
     
     vk::Format findSupportedFormat(const std::vector<vk::Format>& candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features);
     vk::Format findDepthFormat();
     bool hasStencilComponent(vk::Format format);
 
+    void generateMipmaps(vk::Image image, vk::Format format, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
 
     void createInstance();
     void setupDebugMessenger();
