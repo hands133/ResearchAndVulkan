@@ -187,6 +187,11 @@ private:
     vk::DeviceMemory m_TextureImageMemory;
     vk::ImageView m_TextureImageView;
     vk::Sampler m_TextureSampler;
+    vk::SampleCountFlagBits m_MSAASamples = vk::SampleCountFlagBits::e1;
+
+    vk::Image m_ColorImage;
+    vk::DeviceMemory m_ColorImageMemory;
+    vk::ImageView m_ColorImageView;
 
     vk::Image m_DepthImage;
     vk::DeviceMemory m_DepthImageMemory;
@@ -233,8 +238,8 @@ private:
     void updateUniformBuffer(uint32_t currentImage);
 
     void createImage(uint32_t width, uint32_t height, uint32_t mipLevels,
-        vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage,
-        vk::MemoryPropertyFlags properties, 
+        vk::SampleCountFlagBits numSamples, vk::Format format, vk::ImageTiling tiling,
+        vk::ImageUsageFlags usage, vk::MemoryPropertyFlags properties, 
         vk::Image& image, vk::DeviceMemory& memory);
 
     vk::CommandBuffer beginSingleTimeCommands();
@@ -252,6 +257,8 @@ private:
 
     void generateMipmaps(vk::Image image, vk::Format format, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
 
+    vk::SampleCountFlagBits getMaxUsableSampleCount();
+
     void createInstance();
     void setupDebugMessenger();
     void createSurface();
@@ -264,6 +271,7 @@ private:
     void createGraphicsPipeline();
     void createFramebuffers();
     void createCommandPool();
+    void createColorResources();
     void createDepthResources();
     void createTextureImage();
     void createTextureImageView();

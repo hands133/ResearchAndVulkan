@@ -343,5 +343,4 @@ void createTextureSampler() {
 }
 ```
 
-为了允许使用所有 mip 级别，我们设置 `setMinLod` 为 0.0f，并设置 `setMaxLod` 设置为 mip 级别的数量。我们没有理由改变负载值，所以我们将 `mipLodBias` 设置为0.0f。
-
+为了允许使用所有 mip 级别，我们设置 `setMinLod` 为 0.0f，并设置 `setMaxLod` 设置为 mip 级别的数量。我们没有理由改变负载值，所以我们将 `mipLodBias` 设置为 0.0f。

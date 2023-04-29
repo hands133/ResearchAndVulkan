@@ -69,6 +69,7 @@ void HelloTriangleApplication::initVulkan() {
     createDescriptorSetLayout();
     createGraphicsPipeline();
     createCommandPool();
+    createColorResources();
     createDepthResources();
     createFramebuffers();
     createTextureImage();
@@ -228,7 +229,10 @@ void HelloTriangleApplication::pickPhysicalDevice() {
     }
 
     if (candidates.rbegin()->first > 0)
+    {
         m_PhysicalDevice = candidates.rbegin()->second;
+        m_MSAASamples = getMaxUsableSampleCount();
+    }
     else
         throw std::runtime_error("failed to find a suitable GPU!");
 }
@@ -253,7 +257,8 @@ void HelloTriangleApplication::createLogicalDevice()
     }
 
     vk::PhysicalDeviceFeatures deviceFeatures{};
-    deviceFeatures.setSamplerAnisotropy(true);
+    deviceFeatures.setSamplerAnisotropy(true)
+        .setSampleRateShading(true);
 
     vk::DeviceCreateInfo createInfo{};
     createInfo.setQueueCreateInfos(queueCreateInfos)
@@ -328,13 +333,27 @@ void HelloTriangleApplication::createRenderPass()
 {
     vk::AttachmentDescription colorAttachment{};
     colorAttachment.setFormat(m_SwapChainImageFormat)
-        .setSamples(vk::SampleCountFlagBits::e1)
+        .setSamples(m_MSAASamples)
         .setLoadOp(vk::AttachmentLoadOp::eClear)
         .setStoreOp(vk::AttachmentStoreOp::eStore)
         .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
         .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
         .setInitialLayout(vk::ImageLayout::eUndefined)
+        .setFinalLayout(vk::ImageLayout::eColorAttachmentOptimal);
+
+    vk::AttachmentDescription colorAttachmentResolve{};
+    colorAttachmentResolve.setFormat(m_SwapChainImageFormat)
+        .setSamples(vk::SampleCountFlagBits::e1)
+        .setLoadOp(vk::AttachmentLoadOp::eDontCare)
+        .setStoreOp(vk::AttachmentStoreOp::eStore)
+        .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
+        .setStencilStoreOp(vk::AttachmentStoreOp::eDontCare)
+        .setInitialLayout(vk::ImageLayout::eUndefined)
         .setFinalLayout(vk::ImageLayout::ePresentSrcKHR);
+
+    vk::AttachmentReference colorAttachmentResolveRef{};
+    colorAttachmentResolveRef.setAttachment(2)
+        .setLayout(vk::ImageLayout::eColorAttachmentOptimal);
 
     vk::AttachmentReference colorAttachmentRef{};
     colorAttachmentRef.setAttachment(0)
@@ -342,7 +361,7 @@ void HelloTriangleApplication::createRenderPass()
 
     vk::AttachmentDescription depthAttachment{};
     depthAttachment.setFormat(findDepthFormat())
-        .setSamples(vk::SampleCountFlagBits::e1)
+        .setSamples(m_MSAASamples)
         .setLoadOp(vk::AttachmentLoadOp::eClear)
         .setStoreOp(vk::AttachmentStoreOp::eDontCare)
         .setStencilLoadOp(vk::AttachmentLoadOp::eDontCare)
@@ -357,7 +376,8 @@ void HelloTriangleApplication::createRenderPass()
     vk::SubpassDescription subpass{};
     subpass.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
         .setColorAttachments(colorAttachmentRef)
-        .setPDepthStencilAttachment(&depthAttachmentRef);
+        .setPDepthStencilAttachment(&depthAttachmentRef)
+        .setResolveAttachments(colorAttachmentResolveRef);
 
     vk::SubpassDependency dependency{};
     dependency.setSrcSubpass(VK_SUBPASS_EXTERNAL)
@@ -367,8 +387,8 @@ void HelloTriangleApplication::createRenderPass()
         .setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests)
         .setDstAccessMask(vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite);
 
-    std::array<vk::AttachmentDescription, 2> attachments = 
-        { colorAttachment, depthAttachment };
+    std::array<vk::AttachmentDescription, 3> attachments = 
+        { colorAttachment, depthAttachment, colorAttachmentResolve };
 
     vk::RenderPassCreateInfo renderPassInfo{};
     renderPassInfo.setAttachments(attachments)
@@ -376,7 +396,6 @@ void HelloTriangleApplication::createRenderPass()
         .setDependencies(dependency);
     m_RenderPass = m_Device.createRenderPass(renderPassInfo);
     if (!m_RenderPass)  throw std::runtime_error("failed to create render pass!");
-
 }
 
 void HelloTriangleApplication::createDescriptorSetLayout()
@@ -470,7 +489,9 @@ void HelloTriangleApplication::createGraphicsPipeline()
 
     vk::PipelineMultisampleStateCreateInfo multisampling{};
     multisampling.setSampleShadingEnable(false)
-        .setRasterizationSamples(vk::SampleCountFlagBits::e1)
+        .setRasterizationSamples(m_MSAASamples)
+        .setSampleShadingEnable(true)
+        .setMinSampleShading(0.2f)
         .setMinSampleShading(1.0f)  // Optional
         .setPSampleMask(nullptr)    // Optional
         .setAlphaToCoverageEnable(false)               // Optional
@@ -550,7 +571,7 @@ void HelloTriangleApplication::createFramebuffers()
 {
     m_vecSwapchainFramebuffers.resize(m_vecSwapChainImageViews.size());
     for (size_t i = 0; i < m_vecSwapChainImageViews.size(); ++i) {
-        vk::ImageView attachments[] = { m_vecSwapChainImageViews[i], m_DepthImageView };
+        vk::ImageView attachments[] = { m_ColorImageView, m_DepthImageView, m_vecSwapChainImageViews[i] };
                 
         vk::FramebufferCreateInfo framebufferInfo{};
         framebufferInfo.setRenderPass(m_RenderPass)
@@ -577,13 +598,30 @@ void HelloTriangleApplication::createCommandPool()
     if (!m_CommandPool) throw std::runtime_error("failed to create command pool!");
 }
 
+void HelloTriangleApplication::createColorResources()
+{
+    vk::Format colorFormat = m_SwapChainImageFormat;
+    createImage(
+        m_SwapChainExtent.width,
+        m_SwapChainExtent.height,
+        1,
+        m_MSAASamples,
+        colorFormat,
+        vk::ImageTiling::eOptimal,
+        vk::ImageUsageFlagBits::eTransientAttachment |
+        vk::ImageUsageFlagBits::eColorAttachment,
+        vk::MemoryPropertyFlagBits::eDeviceLocal,
+        m_ColorImage,
+        m_ColorImageMemory);
+    m_ColorImageView = createImageView(m_ColorImage, colorFormat, vk::ImageAspectFlagBits::eColor, 1);
+}
+
 void HelloTriangleApplication::createDepthResources()
 {
     vk::Format depthFormat = findDepthFormat();
     createImage(m_SwapChainExtent.width, m_SwapChainExtent.height, 1,
-        depthFormat, vk::ImageTiling::eOptimal,
-        vk::ImageUsageFlagBits::eDepthStencilAttachment,
-        vk::MemoryPropertyFlagBits::eDeviceLocal,
+        m_MSAASamples, depthFormat, vk::ImageTiling::eOptimal,
+        vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal,
         m_DepthImage, m_DepthImageMemory);
 
     m_DepthImageView = createImageView(m_DepthImage, depthFormat, vk::ImageAspectFlagBits::eDepth, 1);
@@ -619,6 +657,7 @@ void HelloTriangleApplication::createTextureImage()
     stbi_image_free(pixels);
 
     createImage(texWidth, texHeight, m_MipLevels,
+        vk::SampleCountFlagBits::e1,
         vk::Format::eR8G8B8A8Srgb, vk::ImageTiling::eOptimal,
         vk::ImageUsageFlagBits::eTransferSrc |
         vk::ImageUsageFlagBits::eTransferDst |
@@ -883,12 +922,17 @@ void HelloTriangleApplication::recreateSwapChain()
     createImageViews();
     createRenderPass();
     createGraphicsPipeline();
+    createColorResources();
     createDepthResources();
     createFramebuffers();
 }
 
 void HelloTriangleApplication::cleanupSwapChain()
 {
+    m_Device.destroyImageView(m_ColorImageView);
+    m_Device.destroyImage(m_ColorImage);
+    m_Device.freeMemory(m_ColorImageMemory);
+
     m_Device.destroyImageView(m_DepthImageView);
     m_Device.destroyImage(m_DepthImage);
     m_Device.freeMemory(m_DepthImageMemory);
@@ -1140,8 +1184,8 @@ void HelloTriangleApplication::updateUniformBuffer(uint32_t currentImage)
 }
 
 void HelloTriangleApplication::createImage(uint32_t width, uint32_t height, uint32_t mipLevels,
-        vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage,
-        vk::MemoryPropertyFlags properties, 
+        vk::SampleCountFlagBits numSamples, vk::Format format, vk::ImageTiling tiling,
+        vk::ImageUsageFlags usage, vk::MemoryPropertyFlags properties, 
         vk::Image& image, vk::DeviceMemory& memory)
 {
     vk::ImageCreateInfo imageInfo{};
@@ -1153,7 +1197,7 @@ void HelloTriangleApplication::createImage(uint32_t width, uint32_t height, uint
         .setTiling(tiling)
         .setInitialLayout(vk::ImageLayout::eUndefined)
         .setUsage(usage)
-        .setSamples(vk::SampleCountFlagBits::e1)
+        .setSamples(numSamples)
         .setSharingMode(vk::SharingMode::eExclusive);
 
     image = m_Device.createImage(imageInfo);
@@ -1410,6 +1454,21 @@ void HelloTriangleApplication::generateMipmaps(vk::Image image, vk::Format forma
         {}, {}, barrier);
     
     endSingleTimeCommands(commandBuffer);
+}
+
+vk::SampleCountFlagBits HelloTriangleApplication::getMaxUsableSampleCount()
+{
+    vk::PhysicalDeviceProperties physicalDeviceProperties = m_PhysicalDevice.getProperties();
+    vk::SampleCountFlags counts = physicalDeviceProperties.limits.framebufferColorSampleCounts &
+        physicalDeviceProperties.limits.framebufferDepthSampleCounts;
+
+    if (counts & vk::SampleCountFlagBits::e64)  return vk::SampleCountFlagBits::e64;
+    if (counts & vk::SampleCountFlagBits::e32)  return vk::SampleCountFlagBits::e32;
+    if (counts & vk::SampleCountFlagBits::e16)  return vk::SampleCountFlagBits::e16;
+    if (counts & vk::SampleCountFlagBits::e8)  return vk::SampleCountFlagBits::e8;
+    if (counts & vk::SampleCountFlagBits::e4)  return vk::SampleCountFlagBits::e4;
+    if (counts & vk::SampleCountFlagBits::e2)  return vk::SampleCountFlagBits::e2;
+    return vk::SampleCountFlagBits::e1;
 }
 
 

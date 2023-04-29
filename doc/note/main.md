@@ -32,3 +32,4 @@
 28. 深度缓冲：`chapters/DepthBuffering.md`
 29. 加载模型：`chapters/LoadingModels.md`
 30. 生成 Mipmaps：`chapters/GeneratingMipmaps.md`
+30. 多重采样：`chapters/Multisampling.md`
