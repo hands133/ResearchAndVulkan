@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.25)
 
 project(learnVulkan)
 
@@ -6,6 +6,10 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_PREFIX_PATH vendor/)
 
 find_package(Vulkan REQUIRED)
+if(NOT Vulkan_FOUND)
+    message(FATAL_ERROR "VULKAN library not found!")
+endif(Vulkan_FOUND)
+
 add_subdirectory(vendor/glm)
 add_subdirectory(vendor/glfw)
 
@@ -20,7 +24,10 @@ target_link_libraries(${PROJECT_NAME}
     PUBLIC vulkan)
 
 target_include_directories(${PROJECT_NAME}
-    PUBLIC "include/")
+    PUBLIC "include/"
+    PUBLIC ${Vulkan_INCLUDE_DIR})
 
+if(UNIX)
 target_compile_options(${PROJECT_NAME} 
     PUBLIC "-pthread")
+endif(UNIX)
