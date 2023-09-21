@@ -4,8 +4,11 @@
 #include "glm/ext/matrix_transform.hpp"
 #include "glm/fwd.hpp"
 #include "glm/trigonometric.hpp"
+#ifdef UNIX
+#define
 #include <X11/X.h>
 #include <X11/Xlib.h>
+#endif
 #include <array>
 #include <cmath>
 #include <cstdint>
@@ -1081,21 +1084,21 @@ vk::ShaderModule HelloTriangleApplication::createShaderModule(const std::vector<
     return shaderModule;
 }
 
-void HelloTriangleApplication::recordCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t imageIndex)
-{
+void HelloTriangleApplication::recordCommandBuffer(vk::CommandBuffer commandBuffer, uint32_t imageIndex) {
     vk::CommandBufferBeginInfo beginInfo{};
-    beginInfo.setFlags(vk::CommandBufferUsageFlags{0})  // Optional
-        .setPInheritanceInfo(nullptr);  // Optional
-        
+    beginInfo.setFlags(vk::CommandBufferUsageFlags{ 0 }) // Optional
+        .setPInheritanceInfo(nullptr);                   // Optional
+
     commandBuffer.begin(beginInfo);
 
     vk::RenderPassBeginInfo renderPassInfo{};
     renderPassInfo.setRenderPass(m_RenderPass)
         .setFramebuffer(m_vecSwapchainFramebuffers[imageIndex])
-        .setRenderArea(vk::Rect2D({0, 0}, m_SwapChainExtent));
+        .setRenderArea(vk::Rect2D({ 0, 0 }, m_SwapChainExtent));
 
     std::array<vk::ClearValue, 2> clearValues{};
-    clearValues[0].setColor({ 0.0f, 0.0f, 0.0f, 1.0f });
+    std::array<float, 4> clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+    clearValues[0].setColor(clearColor);
     clearValues[1].setDepthStencil({ 1.0f, 0 });
     renderPassInfo.setClearValues(clearValues);
 
